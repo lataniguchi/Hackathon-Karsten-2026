@@ -1,0 +1,10 @@
+Título: PO-SL-002
+REV: 00
+Operação: "Rebatimento de elástico no lençol"
+Agrupamento família: Lençol com Elástico
+Tamanho: Casal
+Medidas da peça (em m): 1,40 x 1,90
+Pontos/cm: 3,00
+Perímetro costura (em m): 6,60
+Cód. Eqp: 2
+Elementos: 5.1, 5.2, 1.1

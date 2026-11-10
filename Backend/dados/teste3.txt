@@ -1,0 +1,10 @@
+Título: PO-SL-003
+REV: 00
+Operação: "Costura de etiqueta e acabamento"
+Agrupamento família: fronha
+Tamanho: Padrão
+Medidas da peça (em m): 0,50 x 0,70
+Pontos/cm: 4,00
+Perímetro costura (em m): 2,40
+Cód. Eqp: 3
+Elementos: 2.2, 6.1
