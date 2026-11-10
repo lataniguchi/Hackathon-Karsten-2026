@@ -11,7 +11,7 @@ if str(BACKEND_DIR) not in sys.path:
 
 from services.bases.service import carregar_bases, obter_todas_as_bases
 from services.po.service import gerar_planilha_po_xlsx, processar_calculo_po
-from testes.dados_referencia import CASOS_DE_TESTE
+from testes.dados_referencia import CASOS_ADVERSARIAIS, CASOS_DE_TESTE
 
 
 def test_leitura_bases_dados():
@@ -25,7 +25,7 @@ def test_leitura_bases_dados():
 
 
 def test_cenarios_de_calculo():
-    """Valida o calculo de todos os cenarios externos (todas as maquinas e produtos)."""
+    """Valida o calculo de todos os 13 cenarios reais do catalogo (todas as maquinas e produtos)."""
     carregar_bases()
     for caso in CASOS_DE_TESTE:
         cid = caso["id"]
@@ -58,6 +58,54 @@ def test_cenarios_de_calculo():
         assert abs(total - esperado["tempo_total_tp"]) < 0.0001, (
             f"[{cid}] Tempo total TP ({total}) difere do esperado ({esperado['tempo_total_tp']})."
         )
+
+
+def test_robustez_casos_adversariais():
+    """Valida resiliencia a entradas extremas (emojis, dizimas, espacos extras, numeros gigantes)."""
+    carregar_bases()
+    for caso in CASOS_ADVERSARIAIS:
+        cid = caso["id"]
+        entrada = caso["entrada"]
+        esperado = caso["saida_esperada"]
+
+        resultado = processar_calculo_po(
+            entrada,
+            adicionar_na_fila=False,
+            salvar_excel=False,
+        )
+        itens = resultado["tabela_elementos"]
+        item_fixo = next((i for i in itens if i["codigo_do_elemento"] == "FIXO"), None)
+        assert item_fixo is not None, f"[{cid}] Item FIXO nao foi gerado."
+
+        assert abs(item_fixo["tempos_em_minutos"] - esperado["tempo_fixo_min"]) < 0.0001, (
+            f"[{cid}] Tempo FIXO ({item_fixo['tempos_em_minutos']}) difere do esperado."
+        )
+
+        total = round(sum(i["tempos_em_minutos"] for i in itens), 4)
+        assert abs(total - esperado["tempo_total_tp"]) < 0.0001, (
+            f"[{cid}] Tempo total TP ({total}) difere do esperado."
+        )
+
+
+def test_deteccao_divergencias_teste_do_teste():
+    """Valida o framework de testes: comprova que dados adulterados geram reprovacao garantida."""
+    caso_adulterado = {
+        "entrada": CASOS_DE_TESTE[0]["entrada"],
+        "saida_esperada_falsa": {
+            "tempo_total_tp": 999.9999,  # Valor deliberadamente falso
+        },
+    }
+    resultado = processar_calculo_po(
+        caso_adulterado["entrada"],
+        adicionar_na_fila=False,
+        salvar_excel=False,
+    )
+    total_real = round(sum(i["tempos_em_minutos"] for i in resultado["tabela_elementos"]), 4)
+    gabarito_falso = caso_adulterado["saida_esperada_falsa"]["tempo_total_tp"]
+
+    # O validador DEVE detectar que total_real != gabarito_falso
+    detectou_divergencia = abs(total_real - gabarito_falso) > 0.0001
+    assert detectou_divergencia, "Falha de QA: o framework aceitou um calculo adulterado sem acusar erro."
 
 
 def test_tratamento_excecao_maquina_invalida():

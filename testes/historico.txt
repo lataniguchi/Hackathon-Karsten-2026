@@ -132,3 +132,35 @@ Status: Aprovado | Duracao: 5.15s
   [OK] Teste de Carga - Estagio 2: 50 requisicoes: 1.37s
   [OK] Teste de Carga - Estagio 3: 100 requisicoes: 2.62s
 
+--- Execucao: 2026-11-10 00:53:52 ---
+Status: Aprovado | Duracao: 5.76s
+  [OK] Leitura das bases de dados: 0.73s
+  [OK] Cenarios de calculo (13 produtos e 3 maquinas): 0.00s
+  [OK] Robustez e casos de borda (emojis, dizimas, espacos): 0.00s
+  [OK] Verificacao do validador (deteccao de dados adulterados): 0.00s
+  [OK] Tratamento de excecao para maquina inexistente: 0.00s
+  [OK] Geracao fisica das planilhas Excel: 0.03s
+  [OK] Rota de consulta de bases (/api/bases): 0.00s
+  [OK] Rota de ingestao e calculo (/api/calcular...): 0.02s
+  [OK] Inclusao e balanceamento em fila: 0.00s
+  [OK] Remocao de tarefa da fila com motivo: 0.00s
+  [OK] Teste de Carga - Estagio 1: 20 requisicoes: 0.53s
+  [OK] Teste de Carga - Estagio 2: 50 requisicoes: 1.33s
+  [OK] Teste de Carga - Estagio 3: 100 requisicoes: 3.10s
+
+--- Execucao: 2026-11-10 00:57:08 ---
+Status: Aprovado | Duracao: 4.90s
+  [OK] Leitura das bases de dados: 0.62s
+  [OK] Cenarios de calculo (13 produtos e 3 maquinas): 0.00s
+  [OK] Robustez e casos de borda (emojis, dizimas, espacos): 0.00s
+  [OK] Verificacao do validador (deteccao de dados adulterados): 0.00s
+  [OK] Tratamento de excecao para maquina inexistente: 0.00s
+  [OK] Geracao fisica das planilhas Excel: 0.05s
+  [OK] Rota de consulta de bases (/api/bases): 0.00s
+  [OK] Rota de ingestao e calculo (/api/calcular...): 0.03s
+  [OK] Inclusao e balanceamento em fila: 0.00s
+  [OK] Remocao de tarefa da fila com motivo: 0.00s
+  [OK] Teste de Carga - Estagio 1: 20 requisicoes: 0.44s
+  [OK] Teste de Carga - Estagio 2: 50 requisicoes: 1.17s
+  [OK] Teste de Carga - Estagio 3: 100 requisicoes: 2.57s
+
