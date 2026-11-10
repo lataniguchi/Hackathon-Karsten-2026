@@ -1,0 +1,10 @@
+Descrição do elemento,Código do agrupador,Código do elemento,elemento + agrupador,Tempo,,,.
+Costurar Elemento (sem tempo),1,1,#N/A,0,,,
+Apanhar peça e posicionar na mesa,2,1,#N/A,"0,15",,,
+"Apanhar, posicionar e costurar etiqueta",2,2,#N/A,"0,2",,,
+Apanhar a outra extremidade da peça,2,3,#N/A,"0,3",,,
+Ajeitar peça,3,1,#N/A,"0,12",,,
+Dobrar duas vezes para fazer o inicio da bainha,4,1,#N/A,"0,4",,,
+Posicionar no calcador ajustando a peça no aparelho,5,1,#N/A,"0,35",,,
+Posicionar o elástico embutindo na bainha,5,2,#N/A,"0,1",,,
+Cortar para separar,6,1,#N/A,"0,25",,,

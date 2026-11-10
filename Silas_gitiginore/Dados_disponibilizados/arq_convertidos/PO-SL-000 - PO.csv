@@ -1,0 +1,12 @@
+PO-SL-001,,,,Rev. 00
+Operação,Bainhar no corpo do SL - 1 lado,,,
+Agrupamento família,Tamanho,Medidas da peça (em m),Pontos/cm,"Perímetro costura
+(em m)"
+Sobre-lençol,Solteiro,"1,80 x 2,50","2,50","6,96"
+Cód. Eqp.,Equipamento,RPM - limite inferior,RPM - padrão,RPM - limite superior
+1,Interlock,4500,5000,5500
+Código do elemento,Elementos,,Frequência,Tempos (em minutos)
+FIXO,Tempo de costura,,1,"0,6709"
+2.1,Apanhar peça e posicionar na mesa,,1,"0,1500"
+1.1,Costurar Elemento (sem tempo),,1,"0,0000"
+3.1,Ajeitar peça,,1,"0,1200"
