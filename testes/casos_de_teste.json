@@ -1,7 +1,7 @@
 [
   {
     "id": "PO-SL-001",
-    "descricao": "Cenario 1: Maquina 1 (Sobre-lencol Solteiro na Jack C4)",
+    "descricao": "Cenario 01: Sobre-lencol Solteiro na Maquina 1 (Gabarito Oficial)",
     "texto_demanda": "Título: PO-SL-001\nREV: 00\nOperação: \"Bainhar no corpo do SL - 1 lado\"\nAgrupamento família: Sobre-lençol\nTamanho: Solteiro\nMedidas da peça (em m): 1,80 x 2,50\nPontos/cm: 2,50\nPerímetro costura (em m): 6,96\nCód. Eqp: 1\nElementos: 2.1, 1.1, 3.1\n",
     "entrada": {
       "titulo_po": "PO-SL-001",
@@ -26,7 +26,7 @@
   },
   {
     "id": "PO-SL-002",
-    "descricao": "Cenario 2: Maquina 2 (Lencol com Elastico Casal na Siruba)",
+    "descricao": "Cenario 02: Lencol com Elastico Casal na Maquina 2",
     "texto_demanda": "Título: PO-SL-002\nREV: 00\nOperação: \"Rebatimento de elástico no lençol\"\nAgrupamento família: Lençol com Elástico\nTamanho: Casal\nMedidas da peça (em m): 1,40 x 1,90\nPontos/cm: 3,00\nPerímetro costura (em m): 6,60\nCód. Eqp: 2\nElementos: 5.1, 5.2, 1.1\n",
     "entrada": {
       "titulo_po": "PO-SL-002",
@@ -51,7 +51,7 @@
   },
   {
     "id": "PO-SL-003",
-    "descricao": "Cenario 3: Maquina 3 (Fronha Padrao na Reta Jack A5)",
+    "descricao": "Cenario 03: Fronha Padrao na Maquina 3",
     "texto_demanda": "Título: PO-SL-003\nREV: 00\nOperação: \"Costura de etiqueta e acabamento\"\nAgrupamento família: fronha\nTamanho: Padrão\nMedidas da peça (em m): 0,50 x 0,70\nPontos/cm: 4,00\nPerímetro costura (em m): 2,40\nCód. Eqp: 3\nElementos: 2.2, 6.1\n",
     "entrada": {
       "titulo_po": "PO-SL-003",
@@ -73,6 +73,255 @@
       "soma_mtm_min": 0.4500,
       "tempo_total_tp": 0.6833
     }
+  },
+  {
+    "id": "PO-SL-004",
+    "descricao": "Cenario 04: Sobre-lencol Casal na Maquina 1",
+    "texto_demanda": "Título: PO-SL-004\nREV: 00\nOperação: \"Bainha completa com dobra dupla\"\nAgrupamento família: Sobre-lençol\nTamanho: Casal\nMedidas da peça (em m): 2,20 x 2,50\nPontos/cm: 2,50\nPerímetro costura (em m): 8,20\nCód. Eqp: 1\nElementos: 2.1, 4.1, 1.1, 3.1, 6.1\n",
+    "entrada": {
+      "titulo_po": "PO-SL-004",
+      "rev": "00",
+      "operacao": "Bainha completa com dobra dupla",
+      "produto": {
+        "agrupamento_familia": "Sobre-lençol",
+        "tamanho": "Casal",
+        "medidas_peca_m": "2,20 x 2,50",
+        "pontos_cm": 2.50,
+        "perimetro_costura_m": 8.20
+      },
+      "cod_eqp": 1,
+      "elementos": ["2.1", "4.1", "1.1", "3.1", "6.1"]
+    },
+    "saida_esperada": {
+      "cod_eqp": 1,
+      "tempo_fixo_min": 0.7905,
+      "soma_mtm_min": 0.9200,
+      "tempo_total_tp": 1.7105
+    }
+  },
+  {
+    "id": "PO-SL-005",
+    "descricao": "Cenario 05: Sobre-lencol Queen na Maquina 2",
+    "texto_demanda": "Título: PO-SL-005\nREV: 00\nOperação: \"Bainha lateral nas duas extremidades\"\nAgrupamento família: Sobre-lençol\nTamanho: Queen\nMedidas da peça (em m): 2,40 x 2,60\nPontos/cm: 3,00\nPerímetro costura (em m): 9,00\nCód. Eqp: 2\nElementos: 2.1, 2.3, 4.1, 1.1\n",
+    "entrada": {
+      "titulo_po": "PO-SL-005",
+      "rev": "00",
+      "operacao": "Bainha lateral nas duas extremidades",
+      "produto": {
+        "agrupamento_familia": "Sobre-lençol",
+        "tamanho": "Queen",
+        "medidas_peca_m": "2,40 x 2,60",
+        "pontos_cm": 3.00,
+        "perimetro_costura_m": 9.00
+      },
+      "cod_eqp": 2,
+      "elementos": ["2.1", "2.3", "4.1", "1.1"]
+    },
+    "saida_esperada": {
+      "cod_eqp": 2,
+      "tempo_fixo_min": 0.7515,
+      "soma_mtm_min": 0.8500,
+      "tempo_total_tp": 1.6015
+    }
+  },
+  {
+    "id": "PO-SL-006",
+    "descricao": "Cenario 06: Sobre-lencol King na Maquina 3",
+    "texto_demanda": "Título: PO-SL-006\nREV: 00\nOperação: \"Bainha superior com aplicacao de etiqueta\"\nAgrupamento família: Sobre-lençol\nTamanho: King\nMedidas da peça (em m): 2,80 x 2,70\nPontos/cm: 3,50\nPerímetro costura (em m): 10,40\nCód. Eqp: 3\nElementos: 2.1, 4.1, 2.2, 6.1\n",
+    "entrada": {
+      "titulo_po": "PO-SL-006",
+      "rev": "00",
+      "operacao": "Bainha superior com aplicacao de etiqueta",
+      "produto": {
+        "agrupamento_familia": "Sobre-lençol",
+        "tamanho": "King",
+        "medidas_peca_m": "2,80 x 2,70",
+        "pontos_cm": 3.50,
+        "perimetro_costura_m": 10.40
+      },
+      "cod_eqp": 3,
+      "elementos": ["2.1", "4.1", "2.2", "6.1"]
+    },
+    "saida_esperada": {
+      "cod_eqp": 3,
+      "tempo_fixo_min": 1.0109,
+      "soma_mtm_min": 1.0000,
+      "tempo_total_tp": 2.0109
+    }
+  },
+  {
+    "id": "PO-SL-007",
+    "descricao": "Cenario 07: Lencol com Elastico Solteiro na Maquina 2",
+    "texto_demanda": "Título: PO-SL-007\nREV: 00\nOperação: \"Embutir elastico nas cabeceiras\"\nAgrupamento família: Lençol com Elástico\nTamanho: Solteiro\nMedidas da peça (em m): 0,90 x 1,90\nPontos/cm: 3,00\nPerímetro costura (em m): 5,56\nCód. Eqp: 2\nElementos: 2.1, 5.1, 5.2, 6.1\n",
+    "entrada": {
+      "titulo_po": "PO-SL-007",
+      "rev": "00",
+      "operacao": "Embutir elastico nas cabeceiras",
+      "produto": {
+        "agrupamento_familia": "Lençol com Elástico",
+        "tamanho": "Solteiro",
+        "medidas_peca_m": "0,90 x 1,90",
+        "pontos_cm": 3.00,
+        "perimetro_costura_m": 5.56
+      },
+      "cod_eqp": 2,
+      "elementos": ["2.1", "5.1", "5.2", "6.1"]
+    },
+    "saida_esperada": {
+      "cod_eqp": 2,
+      "tempo_fixo_min": 0.4643,
+      "soma_mtm_min": 0.8500,
+      "tempo_total_tp": 1.3143
+    }
+  },
+  {
+    "id": "PO-SL-008",
+    "descricao": "Cenario 08: Lencol com Elastico Queen na Maquina 1",
+    "texto_demanda": "Título: PO-SL-008\nREV: 00\nOperação: \"Fechamento de cantos e elastico\"\nAgrupamento família: Lençol com Elástico\nTamanho: Queen\nMedidas da peça (em m): 1,60 x 2,00\nPontos/cm: 3,00\nPerímetro costura (em m): 7,16\nCód. Eqp: 1\nElementos: 5.1, 5.2, 3.1, 6.1\n",
+    "entrada": {
+      "titulo_po": "PO-SL-008",
+      "rev": "00",
+      "operacao": "Fechamento de cantos e elastico",
+      "produto": {
+        "agrupamento_familia": "Lençol com Elástico",
+        "tamanho": "Queen",
+        "medidas_peca_m": "1,60 x 2,00",
+        "pontos_cm": 3.00,
+        "perimetro_costura_m": 7.16
+      },
+      "cod_eqp": 1,
+      "elementos": ["5.1", "5.2", "3.1", "6.1"]
+    },
+    "saida_esperada": {
+      "cod_eqp": 1,
+      "tempo_fixo_min": 0.6902,
+      "soma_mtm_min": 0.8200,
+      "tempo_total_tp": 1.5102
+    }
+  },
+  {
+    "id": "PO-SL-009",
+    "descricao": "Cenario 09: Fronha King com Abas na Maquina 3",
+    "texto_demanda": "Título: PO-SL-009\nREV: 00\nOperação: \"Pesponto das abas e etiqueta\"\nAgrupamento família: Fronha\nTamanho: King\nMedidas da peça (em m): 0,50 x 0,90\nPontos/cm: 4,00\nPerímetro costura (em m): 2,80\nCód. Eqp: 3\nElementos: 2.1, 2.2, 3.1, 6.1\n",
+    "entrada": {
+      "titulo_po": "PO-SL-009",
+      "rev": "00",
+      "operacao": "Pesponto das abas e etiqueta",
+      "produto": {
+        "agrupamento_familia": "Fronha",
+        "tamanho": "King",
+        "medidas_peca_m": "0,50 x 0,90",
+        "pontos_cm": 4.00,
+        "perimetro_costura_m": 2.80
+      },
+      "cod_eqp": 3,
+      "elementos": ["2.1", "2.2", "3.1", "6.1"]
+    },
+    "saida_esperada": {
+      "cod_eqp": 3,
+      "tempo_fixo_min": 0.2722,
+      "soma_mtm_min": 0.7200,
+      "tempo_total_tp": 0.9922
+    }
+  },
+  {
+    "id": "PO-SL-010",
+    "descricao": "Cenario 10: Toalha de Banho Felpuda na Maquina 3",
+    "texto_demanda": "Título: PO-SL-010\nREV: 00\nOperação: \"Bainha longitudinal na toalha\"\nAgrupamento família: Toalha de Banho\nTamanho: Gigante\nMedidas da peça (em m): 0,86 x 1,50\nPontos/cm: 3,50\nPerímetro costura (em m): 4,20\nCód. Eqp: 3\nElementos: 2.1, 4.1, 2.3, 6.1\n",
+    "entrada": {
+      "titulo_po": "PO-SL-010",
+      "rev": "00",
+      "operacao": "Bainha longitudinal na toalha",
+      "produto": {
+        "agrupamento_familia": "Toalha de Banho",
+        "tamanho": "Gigante",
+        "medidas_peca_m": "0,86 x 1,50",
+        "pontos_cm": 3.50,
+        "perimetro_costura_m": 4.20
+      },
+      "cod_eqp": 3,
+      "elementos": ["2.1", "4.1", "2.3", "6.1"]
+    },
+    "saida_esperada": {
+      "cod_eqp": 3,
+      "tempo_fixo_min": 0.4082,
+      "soma_mtm_min": 1.1000,
+      "tempo_total_tp": 1.5082
+    }
+  },
+  {
+    "id": "PO-SL-011",
+    "descricao": "Cenario 11: Toalha de Rosto na Maquina 1",
+    "texto_demanda": "Título: PO-SL-011\nREV: 00\nOperação: \"Acabamento de barra e etiqueta\"\nAgrupamento família: Toalha de Rosto\nTamanho: Padrão\nMedidas da peça (em m): 0,50 x 0,80\nPontos/cm: 3,00\nPerímetro costura (em m): 2,60\nCód. Eqp: 1\nElementos: 2.1, 2.2, 4.1, 1.1\n",
+    "entrada": {
+      "titulo_po": "PO-SL-011",
+      "rev": "00",
+      "operacao": "Acabamento de barra e etiqueta",
+      "produto": {
+        "agrupamento_familia": "Toalha de Rosto",
+        "tamanho": "Padrão",
+        "medidas_peca_m": "0,50 x 0,80",
+        "pontos_cm": 3.00,
+        "perimetro_costura_m": 2.60
+      },
+      "cod_eqp": 1,
+      "elementos": ["2.1", "2.2", "4.1", "1.1"]
+    },
+    "saida_esperada": {
+      "cod_eqp": 1,
+      "tempo_fixo_min": 0.2506,
+      "soma_mtm_min": 0.7500,
+      "tempo_total_tp": 1.0006
+    }
+  },
+  {
+    "id": "PO-SL-012",
+    "descricao": "Cenario 12: Colcha Piquet Casal na Maquina 2",
+    "texto_demanda": "Título: PO-SL-012\nREV: 00\nOperação: \"Bainha nos 4 lados da colcha\"\nAgrupamento família: Colcha\nTamanho: Casal\nMedidas da peça (em m): 2,20 x 2,40\nPontos/cm: 2,50\nPerímetro costura (em m): 9,20\nCód. Eqp: 2\nElementos: 2.1, 2.3, 3.1, 4.1, 6.1\n",
+    "entrada": {
+      "titulo_po": "PO-SL-012",
+      "rev": "00",
+      "operacao": "Bainha nos 4 lados da colcha",
+      "produto": {
+        "agrupamento_familia": "Colcha",
+        "tamanho": "Casal",
+        "medidas_peca_m": "2,20 x 2,40",
+        "pontos_cm": 2.50,
+        "perimetro_costura_m": 9.20
+      },
+      "cod_eqp": 2,
+      "elementos": ["2.1", "2.3", "3.1", "4.1", "6.1"]
+    },
+    "saida_esperada": {
+      "cod_eqp": 2,
+      "tempo_fixo_min": 0.7682,
+      "soma_mtm_min": 1.2200,
+      "tempo_total_tp": 1.9882
+    }
+  },
+  {
+    "id": "PO-SL-013",
+    "descricao": "Cenario 13: Protetor de Colchao Completo (Todos os 9 elementos MTM)",
+    "texto_demanda": "Título: PO-SL-013\nREV: 00\nOperação: \"Operacao completa com todos os elementos MTM\"\nAgrupamento família: Protetor de Colchão\nTamanho: Casal\nMedidas da peça (em m): 1,40 x 1,90\nPontos/cm: 3,00\nPerímetro costura (em m): 7,50\nCód. Eqp: 1\nElementos: 1.1, 2.1, 2.2, 2.3, 3.1, 4.1, 5.1, 5.2, 6.1\n",
+    "entrada": {
+      "titulo_po": "PO-SL-013",
+      "rev": "00",
+      "operacao": "Operacao completa com todos os elementos MTM",
+      "produto": {
+        "agrupamento_familia": "Protetor de Colchão",
+        "tamanho": "Casal",
+        "medidas_peca_m": "1,40 x 1,90",
+        "pontos_cm": 3.00,
+        "perimetro_costura_m": 7.50
+      },
+      "cod_eqp": 1,
+      "elementos": ["1.1", "2.1", "2.2", "2.3", "3.1", "4.1", "5.1", "5.2", "6.1"]
+    },
+    "saida_esperada": {
+      "cod_eqp": 1,
+      "tempo_fixo_min": 0.7230,
+      "soma_mtm_min": 1.8700,
+      "tempo_total_tp": 2.5930
+    }
   }
 ]
-

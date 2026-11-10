@@ -12,6 +12,7 @@ if str(BACKEND_DIR) not in sys.path:
 
 import main
 from schemas import DemandaTextoSchema
+from services.config import PASTA_SAIDA
 from services.fila import limpar_filas_maquinas
 from testes.dados_referencia import CASOS_DE_TESTE, MAPA_CASOS
 
@@ -26,10 +27,22 @@ def _executar(retorno_ou_coro):
     return retorno_ou_coro
 
 
+def _limpar_arquivos_excedentes():
+    """Remove planilhas temporarias excedentes geradas durante os lotes de carga."""
+    for arq in PASTA_SAIDA.glob("PO-SL-*.xlsx"):
+        if arq.name != "PO-SL-001.xlsx":
+            try:
+                arq.unlink()
+            except OSError:
+                pass
+
+
 def _executar_lote_carga(quantidade: int):
-    """Executa um lote de requisicoes validando entrada vs saida por ID."""
+    """Executa um lote de requisicoes validando entrada vs saida por ID e fila por maquina."""
     limpar_filas_maquinas()
     sucessos = 0
+    contagem_esperada: dict[int, int] = {}
+    tempo_esperado: dict[int, float] = {}
 
     for i in range(quantidade):
         caso_esperado = CASOS_DE_TESTE[i % len(CASOS_DE_TESTE)]
@@ -53,19 +66,35 @@ def _executar_lote_carga(quantidade: int):
             f"Divergencia de calculo no ID {id_recebido}: "
             f"calculado {total_calculado}, esperado {total_esperado}."
         )
+
+        cod_maq = caso_gabarito["saida_esperada"]["cod_eqp"]
+        contagem_esperada[cod_maq] = contagem_esperada.get(cod_maq, 0) + 1
+        tempo_esperado[cod_maq] = round(tempo_esperado.get(cod_maq, 0.0) + total_esperado, 4)
         sucessos += 1
 
     assert sucessos == quantidade, f"Sucesso em apenas {sucessos}/{quantidade} requisicoes."
 
-    # Validacao do consolidado da fila de maquinas
+    # Validacao do consolidado e do balanceamento individual por maquina
     resumo = main.consultar_filas_maquinas()
     total_tasks_fila = sum(m["quantidade_tasks"] for m in resumo["maquinas_fila"])
     assert total_tasks_fila == quantidade, (
         f"Contagem incorreta na fila: esperado {quantidade}, encontrado {total_tasks_fila}."
     )
 
+    for maq in resumo["maquinas_fila"]:
+        c_maq = maq["codigo_de_maquina"]
+        qtd_esp = contagem_esperada.get(c_maq, 0)
+        tmp_esp = tempo_esperado.get(c_maq, 0.0)
+        assert maq["quantidade_tasks"] == qtd_esp, (
+            f"Balanceamento incorreto na maquina {c_maq}: esperado {qtd_esp}, encontrado {maq['quantidade_tasks']}."
+        )
+        assert abs(maq["tempo_total_fila_min"] - tmp_esp) < 0.001, (
+            f"Tempo acumulado incorreto na maquina {c_maq}: esperado {tmp_esp}, encontrado {maq['tempo_total_fila_min']}."
+        )
+
     # Limpeza apos o lote
     limpar_filas_maquinas()
+    _limpar_arquivos_excedentes()
 
 
 def test_carga_estagio_20():
