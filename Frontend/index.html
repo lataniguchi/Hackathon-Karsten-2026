@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel de Demanda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root { --cor-primaria:#5b6573; --cor-fundo:#d3d7dc; --cor-bloco:#e4e7ea; --cor-claro:#ffffff; --cor-barra:#a3abb5; --cor-destaque:#363c44; --cor-texto:#1c2430; --cor-suave:#6b7685; --raio:12px; }
+  *{box-sizing:border-box} body{margin:0;font-family:"Montserrat",system-ui,Segoe UI,Roboto,sans-serif;background:var(--cor-fundo);color:var(--cor-texto)}
+  .cabecalho{background:#fff;color:#3f454d;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:20px;padding:12px 32px;border-bottom:1px solid #e1e4e8;box-shadow:0 2px 8px rgba(30,36,44,.04)}
+  .cabecalho .logo{display:block;height:76px;width:110px;min-width:110px;object-fit:contain;object-position:left center;background:transparent;border-radius:0}
+  .cabecalho h1{font-size:22px;margin:0;text-align:center;color:#424950;font-weight:600;letter-spacing:.02em}
+  .cabecalho label{font-size:12px;display:flex;align-items:center;justify-content:flex-end;gap:6px;cursor:pointer;color:#5f6872}
+  .cabecalho input[type=color]{width:28px;height:28px;border:0;padding:0;background:none;cursor:pointer}
+  .abas{display:flex;gap:4px;padding:12px 24px 0}
+  .aba{font-family:inherit;border:0;background:transparent;padding:10px 18px;font-size:15px;cursor:pointer;color:var(--cor-suave);border-bottom:3px solid transparent}
+  .aba.ativa{color:var(--cor-destaque);border-color:var(--cor-destaque);font-weight:600}
+  main{padding:16px 24px 40px;max-width:1200px;margin:0 auto}
+  .grade{display:grid;gap:16px;grid-template-columns:repeat(12,1fr)}
+  .col-4{grid-column:span 4}.col-6{grid-column:span 6}.col-8{grid-column:span 8}.col-12{grid-column:span 12}
+  @media(max-width:800px){.col-4,.col-6,.col-8{grid-column:span 12}.cabecalho{padding:10px 16px;gap:12px}.cabecalho .logo{height:60px;width:82px;min-width:82px}.cabecalho h1{font-size:16px}}
+  .bloco{background:var(--cor-bloco);border-radius:var(--raio);padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+  .bloco h2{font-size:15px;margin:0 0 12px}
+  .botao{background:var(--cor-claro);color:var(--cor-primaria);border:1px solid #cfd4da;border-radius:8px;padding:10px 18px;font:600 14px "Montserrat",system-ui,sans-serif;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .botao:hover{filter:brightness(1.1)} .botao:disabled{opacity:.5;cursor:wait}
+  .botao.secundario{background:var(--cor-claro);color:var(--cor-destaque);border:1px solid var(--cor-primaria)}
+  .escolha{display:flex;gap:8px;margin-bottom:14px}
+  .escolha button{flex:1;padding:10px;border-radius:8px;border:1px solid #d5dbe5;background:#fff;cursor:pointer}
+  .escolha button{font-family:inherit}
+  .escolha button.ativa{border-color:var(--cor-primaria);color:#fff;font-weight:600;background:var(--cor-primaria)}
+  textarea,input[type=text]{width:100%;border:1px solid #cfd4da;background:#fff;border-radius:8px;padding:10px;font:inherit}
+  textarea{min-height:160px;resize:vertical}
+  .linha{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+  .kpi .valor{font-size:26px;font-weight:700;color:var(--cor-destaque)}
+  .rotulo{color:var(--cor-suave);font-size:13px} p.rotulo{margin:10px 0 0}
+  .botao.grande{padding:14px 26px;font-size:15px}
+  .topo-dash{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .reservado{border:2px dashed #aab2bc;border-radius:var(--raio);display:flex;align-items:center;justify-content:center;color:var(--cor-suave);min-height:200px;text-align:center;padding:12px}
+  table{border-collapse:collapse;width:100%;font-size:13px} th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #e8ecf3} th{background:#f6f8fb;position:sticky;top:0}
+  .rolagem{max-height:320px;overflow:auto;background:#fff;border-radius:8px}
+  .toast{position:fixed;bottom:20px;right:20px;background:#1c2430;color:#fff;padding:12px 18px;border-radius:8px;opacity:0;transition:.3s;pointer-events:none;max-width:360px}
+  .toast.mostra{opacity:1} .toast.erro{background:#c0362c}
+  .canvas-wrap{position:relative;height:300px;background:#fff;border-radius:8px;padding:10px}
+  .oculto{display:none}
+  pre{white-space:pre-wrap;font-size:12px;background:#fff;padding:10px;border-radius:8px;max-height:260px;overflow:auto}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* =====================================================================
+   1) CONFIGURAÇÃO  — ajuste aqui
+   ===================================================================== */
+const CONFIG = {
+  API_BASE: "http://127.0.0.1:8000",   // URL base da API (sem /docs)
+  TITULO: "Painel de Demanda",
+  LOGO_URL: "../karsten_logo.png",                         // URL da logo (ou use o botão "Logo" no cabeçalho)
+  COR_PRIMARIA: "#5b6573",
+  CAMPO_ARQUIVO: "arquivo",                // campo multipart de /api/calcular-demanda
+  CAMPOS_TITULO_PO: ["titulo_po", "titulo", "po", "id_po"], // onde procurar o título da PO na resposta
+};
+try {
+  const apiSalva = localStorage.getItem("apiBase");
+  if (apiSalva) {
+    const urlSalva = new URL(apiSalva);
+    if (["http:", "https:"].includes(urlSalva.protocol)) {
+      CONFIG.API_BASE = urlSalva.origin + urlSalva.pathname.replace(/\/+$/, "");
+    }
+  }
+} catch {}
+let apiStatusLabel;
+let apiConfigPanel;
+
+/* =====================================================================
+   2) FUNÇÕES UTILITÁRIAS / BLOCOS DE CONSTRUÇÃO
+   ===================================================================== */
+function el(tag, props = {}, filhos = []) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === "class") e.className = v;
+    else if (k === "text") e.textContent = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v);
+  }
+  [].concat(filhos).forEach(f => f && e.append(f));
+  return e;
+}
+const escapar = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---- cores / tema ---- */
+function definirCorPrimaria(cor) {
+  document.documentElement.style.setProperty("--cor-primaria", cor);
+  try { localStorage.setItem("cor", cor); } catch {}
+  Object.values(graficos).forEach(g => g.atualizarCor && g.atualizarCor());
+}
+function definirCorFundo(cor)  { document.documentElement.style.setProperty("--cor-fundo", cor); }
+function definirCorBloco(cor)  { document.documentElement.style.setProperty("--cor-bloco", cor); }
+
+/* ---- bloco (retângulo branco) ---- */
+function criarBloco({ titulo = "", cor = null, colunas = 12, conteudo = [] } = {}) {
+  const b = el("section", { class: `bloco col-${colunas}` });
+  if (cor) b.style.background = cor;
+  if (titulo) b.append(el("h2", { text: titulo }));
+  [].concat(conteudo).forEach(c => b.append(c));
+  return b;
+}
+function criarGrade(blocos = []) { return el("div", { class: "grade" }, blocos); }
+
+/* ---- espaço reservado (para você encaixar algo depois) ---- */
+function criarEspacoReservado(texto = "Espaço reservado", altura = 200) {
+  const r = el("div", { class: "reservado", text: texto });
+  r.style.minHeight = altura + "px";
+  return r;
+}
+
+/* ---- botão ---- */
+function criarBotao(texto, aoClicar, { secundario = false } = {}) {
+  const b = el("button", { class: "botao" + (secundario ? " secundario" : ""), text: texto });
+  b.addEventListener("click", async () => {
+    b.disabled = true;
+    try { await aoClicar(b); } catch (e) { toast(e.message || String(e), true); }
+    finally { b.disabled = false; }
+  });
+  return b;
+}
+
+/* ---- cabeçalho com logo e seletor de cor ---- */
+function criarCabecalho() {
+  const logo = el("img", { class: "logo", alt: "logo" });
+  const defLogo = src => {
+    if (!src) return;
+    logo.onerror = () => {
+      if (logo.src !== new URL(CONFIG.LOGO_URL, window.location.href).href) {
+        logo.src = CONFIG.LOGO_URL;
+      } else {
+        logo.onerror = null;
+        logo.alt = "Logo Karsten";
+      }
+    };
+    logo.src = src;
+    logo.style.display = "";
+  };
+  let salva = ""; try { salva = localStorage.getItem("logo") || ""; } catch {}
+  defLogo(salva || CONFIG.LOGO_URL);
+
+  apiStatusLabel = el("span", { text: `API: ${new URL(CONFIG.API_BASE).host} ⚙` });
+  const apiAddress = el("input", {
+    type: "text",
+    value: CONFIG.API_BASE,
+    placeholder: "http://127.0.0.1:8000",
+    "aria-label": "Endereço base da API",
+  });
+  const apiFeedback = el("p", { class: "rotulo", text: "Informe o endereço do Backend e teste a conexão." });
+  const fecharApi = criarBotao("Fechar", () => {
+    apiConfigPanel.classList.add("oculto");
+    apiConfigPanel.style.display = "none";
+  }, { secundario: true });
+  const testarApi = criarBotao("Salvar e testar conexão", async () => {
+    try {
+      await configurarApi(apiAddress.value);
+      apiFeedback.textContent = `API conectada: ${CONFIG.API_BASE}`;
+      apiConfigPanel.classList.add("oculto");
+      apiConfigPanel.style.display = "none";
+    } catch (e) {
+      apiFeedback.textContent = e.message;
+      toast(e.message, true);
+    }
+  });
+  apiConfigPanel = el("div", { class: "oculto" }, [
+    criarBloco({
+      titulo: "Conectar ao Backend",
+      conteudo: [apiAddress, apiFeedback, el("div", { class: "linha" }, [testarApi, fecharApi])],
+    }),
+  ]);
+  apiConfigPanel.style.cssText = "position:fixed;inset:0;z-index:100;background:#0008;align-items:center;justify-content:center;padding:20px";
+  apiConfigPanel.firstElementChild.style.cssText = "width:min(520px,100%);box-shadow:0 12px 40px #0003";
+  apiConfigPanel.style.display = "none";
+  document.body.append(apiConfigPanel);
+
+  return el("header", { class: "cabecalho" }, [
+    logo,
+    el("h1", { text: CONFIG.TITULO }),
+    el("label", {
+      title: "Clique para configurar e testar o endereço da API",
+      onclick: () => {
+        apiConfigPanel.classList.remove("oculto");
+        apiConfigPanel.style.display = "flex";
+      },
+    }, apiStatusLabel),
+  ]);
+}
+
+/* ---- abas ---- */
+function criarAbas(definicoes) { // [{id, titulo, conteudo, aoAbrir}]
+  const barra = el("nav", { class: "abas" });
+  const area = el("main");
+  const paineis = {};
+  definicoes.forEach(d => {
+    paineis[d.id] = el("div", { class: "oculto" }, d.conteudo);
+    area.append(paineis[d.id]);
+    const bt = el("button", { class: "aba", text: d.titulo });
+    bt.addEventListener("click", () => abrir(d.id));
+    bt.dataset.id = d.id; barra.append(bt);
+  });
+  function abrir(id) {
+    barra.querySelectorAll(".aba").forEach(b => b.classList.toggle("ativa", b.dataset.id === id));
+    Object.entries(paineis).forEach(([k, p]) => p.classList.toggle("oculto", k !== id));
+    definicoes.find(d => d.id === id)?.aoAbrir?.();
+  }
+  abrir(definicoes[0].id);
+  return { barra, area, abrir };
+}
+
+/* ---- KPI ---- */
+function criarKpi(rotulo, valor = "—") {
+  const v = el("div", { class: "valor", text: valor });
+  const b = criarBloco({ colunas: 4, conteudo: [el("div", { class: "kpi" }, [v, el("div", { class: "rotulo", text: rotulo })])] });
+  b.definir = x => v.textContent = x;
+  return b;
+}
+
+/* ---- tabela ---- */
+function criarTabela(linhas) {
+  if (!Array.isArray(linhas) || !linhas.length || typeof linhas[0] !== "object") return null;
+  const cols = [...new Set(linhas.slice(0, 50).flatMap(Object.keys))];
+  const html = `<table><thead><tr>${cols.map(c => `<th>${escapar(c)}</th>`).join("")}</tr></thead><tbody>` +
+    linhas.slice(0, 200).map(l => `<tr>${cols.map(c => `<td>${escapar(typeof l[c] === "object" ? JSON.stringify(l[c]) : l[c])}</td>`).join("")}</tr>`).join("") +
+    `</tbody></table>`;
+  const w = el("div", { class: "rolagem" }); w.innerHTML = html; return w;
+}
+
+/* ---- toast ---- */
+function toast(msg, erro = false) {
+  let t = document.getElementById("toast");
+  if (!t) { t = el("div", { id: "toast", class: "toast" }); document.body.append(t); }
+  t.textContent = msg; t.className = "toast mostra" + (erro ? " erro" : "");
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("mostra"), 4000);
+}
+
+/* ---- gráficos (Chart.js) ---- */
+const graficos = {};
+function criarGrafico(id, tipo, opcoesExtra = {}) {
+  Chart.defaults.font.family = '"Montserrat", system-ui, sans-serif';
+  Chart.defaults.color = "#5b6573";
+  Chart.defaults.borderColor = "#e3e6ea";
+  const canvas = el("canvas");
+  const wrap = el("div", { class: "canvas-wrap" }, canvas);
+  const corP = () => getComputedStyle(document.documentElement).getPropertyValue("--cor-primaria").trim();
+  const chart = new Chart(canvas, {
+    type: tipo,
+    data: { labels: [], datasets: [{ data: [], backgroundColor: corP(), borderRadius: 4 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, ...opcoesExtra },
+  });
+  graficos[id] = {
+    elemento: wrap, chart,
+    atualizar(labels, valores, cores) {
+      chart.data.labels = labels;
+      chart.data.datasets[0].data = valores;
+      chart.data.datasets[0].backgroundColor = cores || corP();
+      chart.update();
+    },
+    atualizarCor() { if (!graficos[id]._cores) { chart.data.datasets[0].backgroundColor = corP(); chart.update(); } },
+  };
+  return graficos[id];
+}
+
+/* =====================================================================
+   3) CAMADA DE API
+   ===================================================================== */
+async function chamarApi(caminho, opcoes = {}) {
+  let r;
+  try {
+    r = await fetch(CONFIG.API_BASE + caminho, opcoes);
+  } catch {
+    throw new Error(
+      `Não foi possível conectar à API em ${CONFIG.API_BASE}. ` +
+      "Inicie o Backend (Backend\\iniciar.bat) ou clique em “API” no cabeçalho para configurar o endereço correto.",
+    );
+  }
+  if (!r.ok) {
+    let detalhe = ""; try { detalhe = (await r.json()).detail ?? ""; } catch {}
+    throw new Error(`Erro ${r.status} em ${caminho}${detalhe ? ": " + (typeof detalhe === "string" ? detalhe : JSON.stringify(detalhe)) : ""}`);
+  }
+  return r;
+}
+async function configurarApi(endereco) {
+  let url;
+  try {
+    url = new URL(endereco.trim());
+    if (!["http:", "https:"].includes(url.protocol)) throw new Error();
+  } catch {
+    throw new Error("Endereço inválido. Use uma URL começando com http:// ou https://.");
+  }
+
+  const enderecoAnterior = CONFIG.API_BASE;
+  const caminhoBase = url.pathname.replace(/\/docs\/?$/, "").replace(/\/+$/, "");
+  CONFIG.API_BASE = url.origin + caminhoBase;
+  try { await chamarApi("/"); }
+  catch (e) {
+    CONFIG.API_BASE = enderecoAnterior;
+    throw e;
+  }
+  if (apiStatusLabel) apiStatusLabel.textContent = `API: ${url.host} ⚙`;
+  try { localStorage.setItem("apiBase", CONFIG.API_BASE); } catch {}
+}
+const enviarArquivo = async arquivo => {
+  const fd = new FormData(); fd.append(CONFIG.CAMPO_ARQUIVO, arquivo);
+  return (await chamarApi("/api/calcular-demanda", { method: "POST", body: fd })).json();
+};
+const enviarTexto = async texto =>
+  (await chamarApi("/api/calcular-demanda-texto", {
+    method: "POST", headers: { "Content-Type": "text/plain;charset=UTF-8" },
+    body: texto,
+  })).json();
+async function baixarFichaPO(titulo) {
+  if (!titulo) throw new Error("Envie uma demanda primeiro (ou informe o título da PO) para baixar a ficha.");
+  const identificadorArquivo = titulo.trim().replace(/\.xlsx$/i, "").split(/[\\/]/).pop();
+  const r = await chamarApi("/api/download-po/" + encodeURIComponent(identificadorArquivo));
+  const blob = await r.blob();
+  let nome = identificadorArquivo + ".xlsx";
+  const cd = r.headers.get("Content-Disposition") || "";
+  const m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(cd);
+  if (m) { try { nome = decodeURIComponent(m[1]); } catch { nome = m[1]; } }
+  nome = nome.replace(/[\\/:*?"<>|]/g, "-");
+  const url = URL.createObjectURL(blob);
+  const a = el("a", { href: url, download: nome });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast("Download iniciado: " + nome);
+}
+const buscarFilas = async () => (await chamarApi("/api/filas")).json();
+
+/* Normaliza a resposta de /api/filas para [{nome, valor}] (aceita vários formatos) */
+function normalizarFilas(dados) {
+  const maquinas = Array.isArray(dados?.maquinas_fila) ? dados.maquinas_fila : [];
+  return maquinas.map(m => ({
+    nome: `Máquina ${m.codigo_de_maquina}${m.tipo_maquina ? " · " + m.tipo_maquina : ""}`,
+    valor: Number(m.tempo_total_fila_min) || 0,
+    quantidade: Number(m.quantidade_tasks) || 0,
+    descricao: m.descricao || "",
+    tasks: Array.isArray(m.tasks) ? m.tasks : [],
+  }));
+}
+function acharTituloPO(resp) {
+  if (!resp || typeof resp !== "object") return "";
+  const tituloCalculado = resp.ficha_po_calculada?.cabecalho?.titulo_po;
+  if (tituloCalculado) return String(tituloCalculado);
+  const tituloExtraido = resp.dados_extraidos_da_demanda?.titulo_po;
+  if (tituloExtraido) return String(tituloExtraido);
+  for (const c of CONFIG.CAMPOS_TITULO_PO) if (resp[c]) return String(resp[c]);
+  return "";
+}
+
+/* =====================================================================
+   4) TELAS
+   ===================================================================== */
+function montarTelaIngestao() {
+  const inputArq = el("input", { type: "file", accept: ".docx,.txt", class: "oculto" });
+  const status = el("p", { class: "rotulo", text: "Formatos aceitos: .docx e .txt" });
+  const resultado = el("div");
+  const campoTitulo = el("input", {
+    type: "text",
+    placeholder: "Arquivo gerado (ex.: PO-SL-056)",
+    autocomplete: "off",
+    name: "po-download-filename",
+  });
+
+  const enviar = criarBotao("📄 Enviar arquivo", () => { inputArq.value = ""; inputArq.click(); });
+  enviar.classList.add("grande");
+
+  inputArq.addEventListener("change", async () => {
+    const arq = inputArq.files[0];
+    if (!arq) return;
+    if (!/\.(docx|txt)$/i.test(arq.name)) {
+      status.textContent = "Formato não suportado. Envie uma demanda em .docx ou .txt.";
+      toast(status.textContent, true);
+      return;
+    }
+    enviar.disabled = true;
+    status.textContent = `Calculando "${arq.name}"…`;
+    try {
+      const resp = await enviarArquivo(arq);
+      const titulo = acharTituloPO(resp);
+      const caminhoGerado = resp.ficha_po_calculada?.arquivo_gerado;
+      const nomeArquivoGerado = typeof caminhoGerado === "string"
+        ? caminhoGerado.split(/[\\/]/).pop().replace(/\.xlsx$/i, "")
+        : "";
+      campoTitulo.value = nomeArquivoGerado || titulo;
+      resultado.replaceChildren();
+      const tabelaElementos = resp.ficha_po_calculada?.tabela_elementos;
+      const lista = Array.isArray(resp) ? resp : (Array.isArray(tabelaElementos)
+        ? tabelaElementos
+        : Object.values(resp || {}).find(Array.isArray));
+      resultado.append(criarTabela(lista) || el("pre", { text: JSON.stringify(resp, null, 2) }));
+      status.textContent = titulo
+        ? `Demanda "${titulo}" calculada. Arquivo da ficha: ${campoTitulo.value}.xlsx`
+        : `Demanda calculada: ${arq.name}`;
+      toast("Demanda calculada com sucesso.");
+    } catch (e) {
+      status.textContent = e.message;
+      toast(e.message, true);
+    } finally {
+      enviar.disabled = false;
+    }
+  });
+
+  const baixar = criarBotao("⬇ Download Ficha PO", () => baixarFichaPO(campoTitulo.value.trim()), { secundario: true });
+
+  function limparResultado() {
+    inputArq.value = "";
+    campoTitulo.value = "";
+    resultado.replaceChildren();
+    status.textContent = "Formatos aceitos: .docx e .txt";
+  }
+  window.addEventListener("pageshow", limparResultado);
+
+  return criarGrade([
+    criarBloco({ titulo: "Enviar demanda", colunas: 6, conteudo: [el("div", { class: "linha" }, [enviar, inputArq]), status] }),
+    criarBloco({ titulo: "Ficha da PO", colunas: 6, conteudo: [campoTitulo, el("div", { class: "linha" }, baixar)] }),
+    criarBloco({ titulo: "Resultado", colunas: 12, conteudo: resultado }),
+  ]);
+}
+
+function montarTelaDashboard() {
+  const kTotal = criarKpi("Máquinas"), kMax = criarKpi("Mais sobrecarregada"), kMedia = criarKpi("Carga média");
+  const barras = criarGrafico("barras", "bar", { indexAxis: "y" });
+  const histo = criarGrafico("histograma", "bar", { scales: { y: { ticks: { precision: 0 } } } });
+  const aviso = el("div", { class: "rotulo" });
+  const status = el("span", { class: "rotulo", text: "Ainda não atualizado." });
+
+  function limpar(msg) {
+    kTotal.definir("—"); kMax.definir("—"); kMedia.definir("—");
+    barras.atualizar([], []); histo.atualizar([], []);
+    aviso.textContent = msg;
+  }
+
+  async function carregar(manual = false) {
+    const hora = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    const filas = normalizarFilas(await buscarFilas()).sort((a, b) => b.valor - a.valor);
+    if (!filas.length) {
+      limpar("Nenhuma demanda na fila no momento.");
+      status.textContent = `Nenhuma demanda na fila (atualizado às ${hora}).`;
+      if (manual) toast("Nenhuma demanda na fila.");
+      return;
+    }
+    const max = filas[0], soma = filas.reduce((s, f) => s + f.valor, 0), media = soma / filas.length;
+    kTotal.definir(filas.length);
+    kMax.definir(`${max.nome} (${max.valor.toFixed(2)} min)`);
+    kMedia.definir(`${media.toFixed(2)} min`);
+
+    // barras: cinza escuro = acima de 1,25× a média; cinza claro = normal
+    const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    barras.atualizar(filas.map(f => f.nome), filas.map(f => f.valor), filas.map(f => f.valor > media * 1.25 ? css("--cor-destaque") : css("--cor-barra")));
+    barras._cores = true;
+
+    // histograma: distribuição das cargas em 6 faixas
+    const lo = Math.min(...filas.map(f => f.valor)), hi = max.valor, n = 6, passo = Math.max((hi - lo) / n, 1e-9);
+    const cont = Array(n).fill(0);
+    filas.forEach(f => cont[Math.min(n - 1, Math.floor((f.valor - lo) / passo))]++);
+    histo.atualizar(cont.map((_, i) => `${(lo + i * passo).toFixed(0)}–${(lo + (i + 1) * passo).toFixed(0)}`), cont);
+    aviso.textContent = "Barras em cinza escuro: carga acima de 125% da média.";
+    status.textContent = `Atualizado às ${hora} · ${filas.length} máquina(s) na fila.`;
+    if (manual) toast("Filas atualizadas.");
+  }
+
+  const grade = criarGrade([
+    criarBloco({ colunas: 12, conteudo: el("div", { class: "topo-dash" }, [criarBotao("↻ Atualizar filas", () => carregar(true), { secundario: true }), status]) }),
+    kTotal, kMax, kMedia,
+    criarBloco({ titulo: "Carga por máquina", colunas: 8, conteudo: [barras.elemento, aviso] }),
+    criarBloco({ titulo: "Histograma de cargas", colunas: 4, conteudo: histo.elemento }),
+    criarBloco({ titulo: "Espaço reservado — ex.: tendência diária", colunas: 6, conteudo: criarEspacoReservado("Encaixe um gráfico aqui") }),
+    criarBloco({ titulo: "Espaço reservado — ex.: tabela de alertas", colunas: 6, conteudo: criarEspacoReservado("Encaixe uma tabela ou KPI aqui") }),
+  ]);
+  grade.carregar = carregar;
+  return grade;
+}
+
+/* =====================================================================
+   5) MONTAGEM DO PAINEL
+   ===================================================================== */
+(function iniciar() {
+  let corSalva = CONFIG.COR_PRIMARIA; try { corSalva = localStorage.getItem("cor") || corSalva; } catch {}
+  definirCorPrimaria(corSalva);
+
+  const ingestao = montarTelaIngestao();
+  const dash = montarTelaDashboard();
+  const abas = criarAbas([
+    { id: "ingestao", titulo: "Ingestão de demanda", conteudo: ingestao },
+    { id: "dash", titulo: "Dashboard", conteudo: dash, aoAbrir: () => dash.carregar && dash.carregar().catch(e => toast(e.message, true)) },
+  ]);
+  document.getElementById("app").append(criarCabecalho(), abas.barra, abas.area);
+})();
+</script>
+</body>
+</html>
