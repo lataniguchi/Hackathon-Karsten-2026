@@ -33,7 +33,9 @@ wheels/
 .coverage
 htmlcov/
 
-# Logs e Ambientes
+# Arquivos gerados
+Backend/saida_po/*.xlsx
+!Backend/saida_po/.gitkeep
 .env
 *.log
 .DS_Store

@@ -1,6 +1,13 @@
 """CABECALHO DO ARQUIVO: tipos estruturados usados pelos serviços do backend."""
 
-from typing import TypedDict
+
+#Ajuste para funcionar em outras versao do python
+import sys
+
+if sys.version_info < (3, 12):
+    from typing_extensions import TypedDict
+else:
+    from typing import TypedDict
 
 
 class ProdutoDados(TypedDict):

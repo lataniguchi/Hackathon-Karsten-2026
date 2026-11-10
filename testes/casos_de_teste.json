@@ -1,0 +1,78 @@
+[
+  {
+    "id": "PO-SL-001",
+    "descricao": "Cenario 1: Maquina 1 (Sobre-lencol Solteiro na Jack C4)",
+    "texto_demanda": "Título: PO-SL-001\nREV: 00\nOperação: \"Bainhar no corpo do SL - 1 lado\"\nAgrupamento família: Sobre-lençol\nTamanho: Solteiro\nMedidas da peça (em m): 1,80 x 2,50\nPontos/cm: 2,50\nPerímetro costura (em m): 6,96\nCód. Eqp: 1\nElementos: 2.1, 1.1, 3.1\n",
+    "entrada": {
+      "titulo_po": "PO-SL-001",
+      "rev": "00",
+      "operacao": "Bainhar no corpo do SL - 1 lado",
+      "produto": {
+        "agrupamento_familia": "Sobre-lençol",
+        "tamanho": "Solteiro",
+        "medidas_peca_m": "1,80 x 2,50",
+        "pontos_cm": 2.50,
+        "perimetro_costura_m": 6.96
+      },
+      "cod_eqp": 1,
+      "elementos": ["2.1", "1.1", "3.1"]
+    },
+    "saida_esperada": {
+      "cod_eqp": 1,
+      "tempo_fixo_min": 0.6709,
+      "soma_mtm_min": 0.2700,
+      "tempo_total_tp": 0.9409
+    }
+  },
+  {
+    "id": "PO-SL-002",
+    "descricao": "Cenario 2: Maquina 2 (Lencol com Elastico Casal na Siruba)",
+    "texto_demanda": "Título: PO-SL-002\nREV: 00\nOperação: \"Rebatimento de elástico no lençol\"\nAgrupamento família: Lençol com Elástico\nTamanho: Casal\nMedidas da peça (em m): 1,40 x 1,90\nPontos/cm: 3,00\nPerímetro costura (em m): 6,60\nCód. Eqp: 2\nElementos: 5.1, 5.2, 1.1\n",
+    "entrada": {
+      "titulo_po": "PO-SL-002",
+      "rev": "00",
+      "operacao": "Rebatimento de elástico no lençol",
+      "produto": {
+        "agrupamento_familia": "Lençol com Elástico",
+        "tamanho": "Casal",
+        "medidas_peca_m": "1,40 x 1,90",
+        "pontos_cm": 3.00,
+        "perimetro_costura_m": 6.60
+      },
+      "cod_eqp": 2,
+      "elementos": ["5.1", "5.2", "1.1"]
+    },
+    "saida_esperada": {
+      "cod_eqp": 2,
+      "tempo_fixo_min": 0.5511,
+      "soma_mtm_min": 0.4500,
+      "tempo_total_tp": 1.0011
+    }
+  },
+  {
+    "id": "PO-SL-003",
+    "descricao": "Cenario 3: Maquina 3 (Fronha Padrao na Reta Jack A5)",
+    "texto_demanda": "Título: PO-SL-003\nREV: 00\nOperação: \"Costura de etiqueta e acabamento\"\nAgrupamento família: fronha\nTamanho: Padrão\nMedidas da peça (em m): 0,50 x 0,70\nPontos/cm: 4,00\nPerímetro costura (em m): 2,40\nCód. Eqp: 3\nElementos: 2.2, 6.1\n",
+    "entrada": {
+      "titulo_po": "PO-SL-003",
+      "rev": "00",
+      "operacao": "Costura de etiqueta e acabamento",
+      "produto": {
+        "agrupamento_familia": "fronha",
+        "tamanho": "Padrão",
+        "medidas_peca_m": "0,50 x 0,70",
+        "pontos_cm": 4.00,
+        "perimetro_costura_m": 2.40
+      },
+      "cod_eqp": 3,
+      "elementos": ["2.2", "6.1"]
+    },
+    "saida_esperada": {
+      "cod_eqp": 3,
+      "tempo_fixo_min": 0.2333,
+      "soma_mtm_min": 0.4500,
+      "tempo_total_tp": 0.6833
+    }
+  }
+]
+

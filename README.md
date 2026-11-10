@@ -32,14 +32,23 @@ Este documento define a arquitetura do projeto e as responsabilidades de cada in
 2. Adicionar o botão de **"Download Ficha PO"** que chama a rota `/api/download-po/{titulo_po}` para baixar o `.xlsx` gerado.
 3. Criar a aba **Dashboard / Filas**, consumindo `/api/filas` para gerar gráficos visuais de qual máquina está mais sobrecarregada (Balanceamento).
 
-### 🧑‍💻 Integrante 3: Qualidade (QA), Documentação e Pitch (O "Closer")
+### Integrante 3: Qualidade (QA), Testes e Validação
 **Responsável por:** Silas Torres
-**Status:** 🚧 Em Andamento
-**Objetivo:** Como o Backend absorveu a exportação, este integrante foca 100% em garantir os 25 pontos do Pitch e o polimento da entrega.
-**Tarefas urgentes:**
-1. **Roteiro do Pitch (5 min):** Criar a narrativa da apresentação. Focar no diferencial da equipe (múltiplas formas de inserir dados + balanceamento visual de fila de máquinas).
-2. **Testes de Ponta a Ponta:** Testar exaustivamente o software com os dados de exemplo (`demanda_000.docx` e `Entradas.xlsx`), garantindo que não há quebras ao tentar deletar/adicionar itens da fila.
-3. **Repositório:** Refinar este README (adicionar prints da tela do frontend assim que prontas) e checar se o repositório público está impecável para a banca (conforme item 5.3 do regulamento).
+**Status:** ✅ Concluído / Em Manutenção
+**O que foi entregue:**
+1. **Suíte de Testes Automatizados:** Bateria de testes cobrindo leitura de bases, cálculo do Tempo FIXO, elementos MTM, tempo total TP e exportação física de planilhas.
+2. **Validação das Rotas da API:** Testes de integração cobrindo consulta de bases, ingestão de texto/arquivo, balanceamento de fila e deleção de tarefas com motivo.
+3. **Automação de Execução:** Script `testes/rodar_testes.bat` para execução local em 1 clique com métricas de tempo e registro persistente em `testes/historico.txt`.
+4. **Compatibilidade Multiplataforma:** Validação e correção de tipagens para garantir funcionamento estável em versões do Python a partir da 3.10.
+
+---
+
+### Como Rodar os Testes Automatizados
+
+Para validar todo o sistema localmente em menos de 1 segundo:
+
+1. Dê um duplo clique no arquivo **`testes/rodar_testes.bat`** (ou execute `python testes/executar_testes.py`).
+2. O script validará o motor de cálculo e as rotas da API, gravando as métricas em `testes/historico.txt`.
 
 ---
 

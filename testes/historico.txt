@@ -1,0 +1,92 @@
+--- Execucao: 2026-11-09 23:53:22 ---
+Status: Falha | Duracao: 0.77s
+  [OK] Leitura das bases de dados: 0.71s
+  [OK] Calculo do Tempo FIXO: 0.00s
+  [OK] Consulta e soma dos elementos MTM: 0.00s
+  [OK] Calculo do Tempo Total TP: 0.00s
+  [OK] Geracao da Ficha PO em planilha: 0.03s
+  [OK] Rota de consulta de bases (/api/bases): 0.00s
+  [OK] Rota de ingestao e calculo (/api/calcular...): 0.02s
+  [OK] Inclusao e balanceamento em fila: 0.00s
+  [FALHA] Remocao de tarefa da fila com motivo: 0.01s
+        Motivo: 'status'
+
+--- Execucao: 2026-11-09 23:53:53 ---
+Status: Aprovado | Duracao: 0.82s
+  [OK] Leitura das bases de dados: 0.75s
+  [OK] Calculo do Tempo FIXO: 0.00s
+  [OK] Consulta e soma dos elementos MTM: 0.00s
+  [OK] Calculo do Tempo Total TP: 0.00s
+  [OK] Geracao da Ficha PO em planilha: 0.04s
+  [OK] Rota de consulta de bases (/api/bases): 0.00s
+  [OK] Rota de ingestao e calculo (/api/calcular...): 0.03s
+  [OK] Inclusao e balanceamento em fila: 0.00s
+  [OK] Remocao de tarefa da fila com motivo: 0.00s
+
+--- Execucao: 2026-11-09 23:58:31 ---
+Status: Aprovado | Duracao: 0.77s
+  [OK] Leitura das bases de dados: 0.71s
+  [OK] Calculo do Tempo FIXO: 0.00s
+  [OK] Consulta e soma dos elementos MTM: 0.00s
+  [OK] Calculo do Tempo Total TP: 0.00s
+  [OK] Geracao da Ficha PO em planilha: 0.03s
+  [OK] Rota de consulta de bases (/api/bases): 0.00s
+  [OK] Rota de ingestao e calculo (/api/calcular...): 0.02s
+  [OK] Inclusao e balanceamento em fila: 0.00s
+  [OK] Remocao de tarefa da fila com motivo: 0.00s
+
+--- Execucao: 2026-11-10 00:03:09 ---
+Status: Aprovado | Duracao: 0.85s
+  [OK] Leitura das bases de dados: 0.79s
+  [OK] Calculo do Tempo FIXO: 0.00s
+  [OK] Consulta e soma dos elementos MTM: 0.00s
+  [OK] Calculo do Tempo Total TP: 0.00s
+  [OK] Geracao da Ficha PO em planilha: 0.04s
+  [OK] Rota de consulta de bases (/api/bases): 0.00s
+  [OK] Rota de ingestao e calculo (/api/calcular...): 0.03s
+  [OK] Inclusao e balanceamento em fila: 0.00s
+  [OK] Remocao de tarefa da fila com motivo: 0.00s
+
+--- Execucao: 2026-11-10 00:04:02 ---
+Status: Aprovado | Duracao: 0.76s
+  [OK] Leitura das bases de dados: 0.70s
+  [OK] Calculo do Tempo FIXO: 0.00s
+  [OK] Consulta e soma dos elementos MTM: 0.00s
+  [OK] Calculo do Tempo Total TP: 0.00s
+  [OK] Geracao da Ficha PO em planilha: 0.03s
+  [OK] Rota de consulta de bases (/api/bases): 0.00s
+  [OK] Rota de ingestao e calculo (/api/calcular...): 0.02s
+  [OK] Inclusao e balanceamento em fila: 0.00s
+  [OK] Remocao de tarefa da fila com motivo: 0.00s
+
+--- Execucao: 2026-11-10 00:17:04 ---
+Status: Falha | Duracao: 0.86s
+  [OK] Leitura das bases de dados: 0.73s
+  [OK] Cenarios de calculo (todas as maquinas): 0.00s
+  [OK] Tratamento de excecao para maquina inexistente: 0.00s
+  [OK] Geracao fisica das planilhas Excel: 0.03s
+  [OK] Rota de consulta de bases (/api/bases): 0.00s
+  [OK] Rota de ingestao e calculo (/api/calcular...): 0.02s
+  [OK] Inclusao e balanceamento em fila: 0.00s
+  [OK] Remocao de tarefa da fila com motivo: 0.00s
+  [FALHA] Teste de Carga - Estagio 1: 20 requisicoes: 0.03s
+        Motivo: 'tempo_total_tp'
+  [FALHA] Teste de Carga - Estagio 2: 50 requisicoes: 0.03s
+        Motivo: 'tempo_total_tp'
+  [FALHA] Teste de Carga - Estagio 3: 100 requisicoes: 0.02s
+        Motivo: 'tempo_total_tp'
+
+--- Execucao: 2026-11-10 00:17:34 ---
+Status: Aprovado | Duracao: 6.95s
+  [OK] Leitura das bases de dados: 0.73s
+  [OK] Cenarios de calculo (todas as maquinas): 0.00s
+  [OK] Tratamento de excecao para maquina inexistente: 0.00s
+  [OK] Geracao fisica das planilhas Excel: 0.03s
+  [OK] Rota de consulta de bases (/api/bases): 0.00s
+  [OK] Rota de ingestao e calculo (/api/calcular...): 0.03s
+  [OK] Inclusao e balanceamento em fila: 0.00s
+  [OK] Remocao de tarefa da fila com motivo: 0.00s
+  [OK] Teste de Carga - Estagio 1: 20 requisicoes: 0.52s
+  [OK] Teste de Carga - Estagio 2: 50 requisicoes: 1.68s
+  [OK] Teste de Carga - Estagio 3: 100 requisicoes: 3.96s
+
