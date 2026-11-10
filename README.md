@@ -14,7 +14,7 @@ Este documento define a arquitetura do projeto e as responsabilidades de cada in
 ## 👥 Divisão de Tarefas (Atualizada)
 
 ### 🧑‍💻 Integrante 1: Backend, Arquitetura e Engenharia de Dados
-**Responsável por:** [Seu Nome - Dimitri]
+**Responsável por:** Dimitri Maia
 **Status:** ✅ Concluído / Em Manutenção
 **O que foi entregue:**
 1. **Motor MTM & PO:** Cálculo automatizado do Tempo FIXO e Elementos MTM.
@@ -24,7 +24,7 @@ Este documento define a arquitetura do projeto e as responsabilidades de cada in
 5. **Automação de Setup:** Script `iniciar.bat` pronto para a banca testar com 1 clique.
 
 ### 🧑‍💻 Integrante 2: Frontend e Painel de Produção (UI/UX)
-**Responsável por:** [Nome do Integrante 2]
+**Responsável por:** Laís Aya
 **Status:** 🚧 Em Andamento
 **Objetivo:** Consumir a API robusta que já está no ar e criar uma interface amigável.
 **Tarefas urgentes:**
@@ -33,7 +33,7 @@ Este documento define a arquitetura do projeto e as responsabilidades de cada in
 3. Criar a aba **Dashboard / Filas**, consumindo `/api/filas` para gerar gráficos visuais de qual máquina está mais sobrecarregada (Balanceamento).
 
 ### 🧑‍💻 Integrante 3: Qualidade (QA), Documentação e Pitch (O "Closer")
-**Responsável por:** [Nome do Integrante 3]
+**Responsável por:** Silas Torres
 **Status:** 🚧 Em Andamento
 **Objetivo:** Como o Backend absorveu a exportação, este integrante foca 100% em garantir os 25 pontos do Pitch e o polimento da entrega.
 **Tarefas urgentes:**
