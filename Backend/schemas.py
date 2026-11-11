@@ -1,12 +1,23 @@
 """CABECALHO DO ARQUIVO: schemas Pydantic para validar entradas e saídas HTTP."""
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class DemandaTextoSchema(BaseModel):
     """Corpo JSON que transporta o texto de uma demanda."""
 
     texto: str = Field(..., min_length=1)
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalizar_texto_recebido(cls, valor: object) -> object:
+        """Aceita texto JSON bruto ou os nomes de campo usados por clientes."""
+        if isinstance(valor, str):
+            return {"texto": valor}
+        if isinstance(valor, dict) and "texto" not in valor:
+            if "texto_demanda" in valor:
+                return {"texto": valor["texto_demanda"]}
+        return valor
 
 
 class RemoverTaskSchema(BaseModel):

@@ -55,6 +55,8 @@ A API aceita 3 formas diferentes de processar a demanda, garantindo flexibilidad
 
   * **Ideal para:** Um botão `<input type="file">` no Front.
 
+  * **Arquivos TXT:** Aceita texto de demanda simples, JSON no formato `{"texto": "Título: ..."}` ou JSON com os campos da demanda (`titulo_po`, `produto`, `cod_eqp`, `elementos`, etc.).
+
 * **`POST /api/calcular-demanda-texto`**
 
   * **Uso:** Envio de texto puro colado.
@@ -70,6 +72,8 @@ A API aceita 3 formas diferentes de processar a demanda, garantindo flexibilidad
   * **Body:** `{"texto": "Título: PO-SL-001\nREV: 00..."}`
 
   * **Ideal para:** Uma caixa de texto (`<textarea>`) no Frontend enviando via `fetch` ou `axios`.
+
+  * **Compatibilidade:** Também aceita o conteúdo como string JSON ou no campo `texto_demanda`. Para evitar `422`, envie `Content-Type: application/json` e um dos formatos aceitos.
 
 ### 2. Download do Resultado
 

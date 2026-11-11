@@ -1,12 +1,14 @@
 """Testes de integracao das rotas e contratos da API FastAPI baseados em dados externos."""
 
 import inspect
+import json
 import os
 import sys
 import tempfile
 from pathlib import Path
 
 import openpyxl
+from fastapi.testclient import TestClient
 
 # Ajuste do path para importar os modulos do Backend
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -22,6 +24,7 @@ from schemas import (
 )
 from services import state
 from services.fila import service as fila_service
+from services.po import service as po_service
 from testes.dados_referencia import CASOS_DE_TESTE
 
 
@@ -57,6 +60,77 @@ def test_rota_ingestao_e_calculo_texto():
     item_fixo = next((i for i in itens if i["codigo_do_elemento"] == "FIXO"), None)
     assert item_fixo is not None, "Elemento FIXO ausente na PO calculada."
     assert abs(item_fixo["tempos_em_minutos"] - caso["saida_esperada"]["tempo_fixo_min"]) < 0.0001
+
+
+def test_rota_json_texto_aceita_formatos_de_payload():
+    """Valida o schema e os formatos JSON documentados/compatíveis."""
+    texto = CASOS_DE_TESTE[0]["texto_demanda"]
+    pasta_saida_original = po_service.PASTA_SAIDA
+    with tempfile.TemporaryDirectory() as diretorio:
+        po_service.PASTA_SAIDA = Path(diretorio)
+        try:
+            cliente = TestClient(main.app)
+            payloads = (
+                {"texto": texto},
+                texto,
+                {"texto_demanda": texto},
+            )
+            for payload in payloads:
+                resposta = cliente.post(
+                    "/api/calcular-demanda-json-texto?adicionar_na_fila=false",
+                    json=payload,
+                )
+                assert resposta.status_code == 200, resposta.text
+                corpo = resposta.json()
+                assert corpo["dados_extraidos_da_demanda"]["titulo_po"]
+                assert corpo["ficha_po_calculada"]["tabela_elementos"]
+        finally:
+            po_service.PASTA_SAIDA = pasta_saida_original
+
+
+def test_upload_txt_com_json_extrai_dados_da_demanda():
+    """Valida o upload TXT com envelope JSON e com campos JSON estruturados."""
+    pasta_saida_original = po_service.PASTA_SAIDA
+    texto = CASOS_DE_TESTE[0]["texto_demanda"]
+    json_com_texto = json.dumps({"texto": texto}, ensure_ascii=False).encode("utf-8")
+    json_estruturado = json.dumps(
+        {
+            "titulo_po": "PO-SL-007",
+            "rev": "02",
+            "operacao": "Operação estruturada",
+            "produto": {
+                "agrupamento_familia": "Sobre-lençol",
+                "tamanho": "Solteiro",
+                "medidas_peca_m": "1,80 x 2,50",
+                "pontos_cm": 2.5,
+                "perimetro_costura_m": 6.96,
+            },
+            "cod_eqp": 1,
+            "elementos": ["2.1", "1.1"],
+        },
+        ensure_ascii=False,
+    ).encode("utf-8")
+
+    with tempfile.TemporaryDirectory() as diretorio:
+        po_service.PASTA_SAIDA = Path(diretorio)
+        try:
+            cliente = TestClient(main.app)
+            for conteudo in (json_com_texto, json_estruturado):
+                resposta = cliente.post(
+                    "/api/calcular-demanda?adicionar_na_fila=false",
+                    files={"arquivo": ("demanda.txt", conteudo, "text/plain")},
+                )
+                assert resposta.status_code == 200, resposta.text
+                dados = resposta.json()["dados_extraidos_da_demanda"]
+                assert dados["titulo_po"]
+                assert dados["operacao"]
+                assert dados["produto"]["agrupamento_familia"]
+                assert dados["produto"]["tamanho"]
+                assert dados["produto"]["pontos_cm"] > 0
+                assert dados["produto"]["perimetro_costura_m"] > 0
+                assert dados["elementos"]
+        finally:
+            po_service.PASTA_SAIDA = pasta_saida_original
 
 
 def test_rota_adicao_e_balanceamento_fila():
