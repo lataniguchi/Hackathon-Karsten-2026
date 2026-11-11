@@ -33,14 +33,20 @@
   .escolha button.ativa{border-color:var(--cor-primaria);color:#fff;font-weight:600;background:var(--cor-primaria)}
   textarea,input[type=text]{width:100%;border:1px solid #cfd4da;background:#fff;border-radius:8px;padding:10px;font:inherit}
   textarea{min-height:160px;resize:vertical}
+  .form-demanda{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .form-demanda label{display:grid;gap:6px;color:var(--cor-texto);font-size:12px;font-weight:600}
+  .form-demanda input{min-width:0}
+  .form-demanda .campo-largo{grid-column:1/-1}
+  @media(max-width:600px){.form-demanda{grid-template-columns:1fr}.form-demanda .campo-largo{grid-column:auto}}
   .linha{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
-  .kpi .valor{font-size:26px;font-weight:700;color:var(--cor-destaque)}
+  .kpi .valor{font-size:26px;font-weight:700;color:var(--cor-destaque);text-align:center}
   .rotulo{color:var(--cor-suave);font-size:13px} p.rotulo{margin:10px 0 0}
   .botao.grande{padding:14px 26px;font-size:15px}
   .topo-dash{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
   .reservado{border:2px dashed #aab2bc;border-radius:var(--raio);display:flex;align-items:center;justify-content:center;color:var(--cor-suave);min-height:200px;text-align:center;padding:12px}
   table{border-collapse:collapse;width:100%;font-size:13px} th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #e8ecf3} th{background:#f6f8fb;position:sticky;top:0}
   .rolagem{max-height:320px;overflow:auto;background:#fff;border-radius:8px}
+  .lista-tasks{display:grid;gap:14px}.maquina-tasks{background:#fff;border-radius:8px;padding:14px;min-width:0}.maquina-tasks h3{font-size:14px;margin:0 0 10px}.tabela-tasks{overflow-x:auto}.tabela-tasks table{min-width:720px}.acoes-task{display:flex;gap:6px;white-space:nowrap;align-items:center}.acoes-task select{max-width:145px;padding:8px;border:1px solid #cfd4da;border-radius:8px;background:#fff;font:inherit}.botao.perigo{color:#a52d25;border-color:#d6a09b}
   .toast{position:fixed;bottom:20px;right:20px;background:#1c2430;color:#fff;padding:12px 18px;border-radius:8px;opacity:0;transition:.3s;pointer-events:none;max-width:360px}
   .toast.mostra{opacity:1} .toast.erro{background:#c0362c}
   .canvas-wrap{position:relative;height:300px;background:#fff;border-radius:8px;padding:10px}
@@ -223,6 +229,10 @@ function criarKpi(rotulo, valor = "—") {
   return b;
 }
 
+function formatarHoras(minutos) {
+  return `${(Number(minutos || 0) / 60).toFixed(2)} h`;
+}
+
 /* ---- tabela ---- */
 function criarTabela(linhas) {
   if (!Array.isArray(linhas) || !linhas.length || typeof linhas[0] !== "object") return null;
@@ -333,11 +343,20 @@ async function baixarFichaPO(titulo) {
   toast("Download iniciado: " + nome);
 }
 const buscarFilas = async () => (await chamarApi("/api/filas")).json();
+const buscarTasksMaquina = async codigo =>
+  (await chamarApi(`/api/filas/${encodeURIComponent(codigo)}/tasks`)).json();
+const alterarTaskFila = async (codigo, indice, motivo) =>
+  (await chamarApi(`/api/filas/${encodeURIComponent(codigo)}/tasks/${encodeURIComponent(indice)}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ motivo }),
+  })).json();
 
 /* Normaliza a resposta de /api/filas para [{nome, valor}] (aceita vários formatos) */
 function normalizarFilas(dados) {
   const maquinas = Array.isArray(dados?.maquinas_fila) ? dados.maquinas_fila : [];
   return maquinas.map(m => ({
+    codigo: Number(m.codigo_de_maquina),
     nome: `Máquina ${m.codigo_de_maquina}${m.tipo_maquina ? " · " + m.tipo_maquina : ""}`,
     valor: Number(m.tempo_total_fila_min) || 0,
     quantidade: Number(m.quantidade_tasks) || 0,
@@ -359,67 +378,145 @@ function acharTituloPO(resp) {
    4) TELAS
    ===================================================================== */
 function montarTelaIngestao() {
+  const btArq = el("button", { class: "ativa", text: "📄 Enviar arquivo" });
+  const btTxt = el("button", { text: "✏️ Colar texto" });
+  const escolha = el("div", { class: "escolha" }, [btArq, btTxt]);
   const inputArq = el("input", { type: "file", accept: ".docx,.txt", class: "oculto" });
-  const status = el("p", { class: "rotulo", text: "Formatos aceitos: .docx e .txt" });
+  const nomeArquivo = el("span", { class: "rotulo", text: "Nenhum arquivo selecionado." });
+  const selecionarArquivo = criarBotao("Selecionar arquivo", () => inputArq.click(), { secundario: true });
+  const caixaArq = el("div", { class: "linha" }, [selecionarArquivo, inputArq, nomeArquivo]);
+  const camposTexto = [
+    { chave: "titulo", rotulo: "Título", exemplo: "PO-SL-002" },
+    { chave: "rev", rotulo: "REV", exemplo: "00" },
+    { chave: "operacao", rotulo: "Operação", exemplo: "Rebatimento de elástico no lençol", longo: true },
+    { chave: "familia", rotulo: "Agrupamento família", exemplo: "Lençol com Elástico" },
+    { chave: "tamanho", rotulo: "Tamanho", exemplo: "Casal" },
+    { chave: "medidas", rotulo: "Medidas da peça (em m)", exemplo: "1,40 x 1,90" },
+    { chave: "pontos", rotulo: "Pontos/cm", exemplo: "3,00" },
+    { chave: "perimetro", rotulo: "Perímetro costura (em m)", exemplo: "6,60" },
+    { chave: "equipamento", rotulo: "Cód. Eqp", exemplo: "2" },
+    { chave: "elementos", rotulo: "Elementos", exemplo: "5.1, 5.2, 1.1", longo: true },
+  ];
+  const entradasTexto = Object.fromEntries(camposTexto.map(campo => {
+    const entrada = el("input", {
+      type: "text",
+      placeholder: campo.exemplo,
+      autocomplete: "off",
+      required: "required",
+      "aria-label": campo.rotulo,
+    });
+    const label = el("label", { class: campo.longo ? "campo-largo" : "" }, [
+      el("span", { text: campo.rotulo }),
+      entrada,
+    ]);
+    return [campo.chave, { entrada, label }];
+  }));
+  const caixaTxt = el("div", { class: "oculto" }, [
+    el("div", { class: "form-demanda" }, camposTexto.map(campo => entradasTexto[campo.chave].label)),
+  ]);
   const resultado = el("div");
+  const status = el("p", { class: "rotulo", text: "Selecione um arquivo .docx/.txt ou cole o texto da demanda." });
   const campoTitulo = el("input", {
     type: "text",
     placeholder: "Arquivo gerado (ex.: PO-SL-056)",
     autocomplete: "off",
     name: "po-download-filename",
   });
+  let modo = "arquivo";
 
-  const enviar = criarBotao("📄 Enviar arquivo", () => { inputArq.value = ""; inputArq.click(); });
-  enviar.classList.add("grande");
+  function trocar(m) {
+    modo = m;
+    btArq.classList.toggle("ativa", m === "arquivo");
+    btTxt.classList.toggle("ativa", m === "texto");
+    caixaArq.classList.toggle("oculto", m !== "arquivo");
+    caixaTxt.classList.toggle("oculto", m !== "texto");
+  }
+  btArq.addEventListener("click", () => trocar("arquivo"));
+  btTxt.addEventListener("click", () => trocar("texto"));
+  inputArq.addEventListener("change", () => {
+    const arquivo = inputArq.files[0];
+    nomeArquivo.textContent = arquivo ? arquivo.name : "Nenhum arquivo selecionado.";
+  });
 
-  inputArq.addEventListener("change", async () => {
-    const arq = inputArq.files[0];
-    if (!arq) return;
-    if (!/\.(docx|txt)$/i.test(arq.name)) {
-      status.textContent = "Formato não suportado. Envie uma demanda em .docx ou .txt.";
-      toast(status.textContent, true);
-      return;
-    }
-    enviar.disabled = true;
-    status.textContent = `Calculando "${arq.name}"…`;
+  function mostrarResultado(resp, origem) {
+    const titulo = acharTituloPO(resp);
+    const caminhoGerado = resp.ficha_po_calculada?.arquivo_gerado;
+    const nomeArquivoGerado = typeof caminhoGerado === "string"
+      ? caminhoGerado.split(/[\\/]/).pop().replace(/\.xlsx$/i, "")
+      : "";
+    campoTitulo.value = nomeArquivoGerado || titulo;
+    resultado.replaceChildren();
+    const tabelaElementos = resp.ficha_po_calculada?.tabela_elementos;
+    const lista = Array.isArray(resp) ? resp : (Array.isArray(tabelaElementos)
+      ? tabelaElementos
+      : Object.values(resp || {}).find(Array.isArray));
+    resultado.append(criarTabela(lista) || el("pre", { text: JSON.stringify(resp, null, 2) }));
+    status.textContent = titulo
+      ? `Demanda "${titulo}" calculada. Arquivo da ficha: ${campoTitulo.value}.xlsx`
+      : `Demanda calculada: ${origem}`;
+    toast("Demanda calculada com sucesso.");
+  }
+
+  const enviar = criarBotao("Calcular demanda", async () => {
     try {
-      const resp = await enviarArquivo(arq);
-      const titulo = acharTituloPO(resp);
-      const caminhoGerado = resp.ficha_po_calculada?.arquivo_gerado;
-      const nomeArquivoGerado = typeof caminhoGerado === "string"
-        ? caminhoGerado.split(/[\\/]/).pop().replace(/\.xlsx$/i, "")
-        : "";
-      campoTitulo.value = nomeArquivoGerado || titulo;
-      resultado.replaceChildren();
-      const tabelaElementos = resp.ficha_po_calculada?.tabela_elementos;
-      const lista = Array.isArray(resp) ? resp : (Array.isArray(tabelaElementos)
-        ? tabelaElementos
-        : Object.values(resp || {}).find(Array.isArray));
-      resultado.append(criarTabela(lista) || el("pre", { text: JSON.stringify(resp, null, 2) }));
-      status.textContent = titulo
-        ? `Demanda "${titulo}" calculada. Arquivo da ficha: ${campoTitulo.value}.xlsx`
-        : `Demanda calculada: ${arq.name}`;
-      toast("Demanda calculada com sucesso.");
+      let resp;
+      let origem;
+      if (modo === "arquivo") {
+        const arquivo = inputArq.files[0];
+        if (!arquivo) throw new Error("Selecione um arquivo .docx ou .txt.");
+        if (!/\.(docx|txt)$/i.test(arquivo.name)) {
+          throw new Error("Formato não suportado. Envie uma demanda em .docx ou .txt.");
+        }
+        origem = arquivo.name;
+        status.textContent = `Calculando "${origem}"…`;
+        resp = await enviarArquivo(arquivo);
+      } else {
+        const faltantes = camposTexto
+          .filter(campo => !entradasTexto[campo.chave].entrada.value.trim())
+          .map(campo => campo.rotulo);
+        if (faltantes.length) throw new Error(`Preencha os campos: ${faltantes.join(", ")}.`);
+        const valores = Object.fromEntries(camposTexto.map(campo => [
+          campo.chave,
+          entradasTexto[campo.chave].entrada.value.trim(),
+        ]));
+        const demanda = [
+          `Título: ${valores.titulo}`,
+          `REV: ${valores.rev}`,
+          `Operação: ${valores.operacao}`,
+          `Agrupamento família: ${valores.familia}`,
+          `Tamanho: ${valores.tamanho}`,
+          `Medidas da peça (em m): ${valores.medidas}`,
+          `Pontos/cm: ${valores.pontos}`,
+          `Perímetro costura (em m): ${valores.perimetro}`,
+          `Cód. Eqp: ${valores.equipamento}`,
+          `Elementos: ${valores.elementos}`,
+        ].join("\n");
+        origem = "texto colado";
+        status.textContent = "Calculando demanda…";
+        resp = await enviarTexto(demanda);
+      }
+      mostrarResultado(resp, origem);
     } catch (e) {
-      status.textContent = e.message;
-      toast(e.message, true);
-    } finally {
-      enviar.disabled = false;
+      status.textContent = e.message || String(e);
+      throw e;
     }
   });
+  enviar.classList.add("grande");
 
   const baixar = criarBotao("⬇ Download Ficha PO", () => baixarFichaPO(campoTitulo.value.trim()), { secundario: true });
 
   function limparResultado() {
     inputArq.value = "";
+    nomeArquivo.textContent = "Nenhum arquivo selecionado.";
+    Object.values(entradasTexto).forEach(({ entrada }) => { entrada.value = ""; });
     campoTitulo.value = "";
     resultado.replaceChildren();
-    status.textContent = "Formatos aceitos: .docx e .txt";
+    status.textContent = "Selecione um arquivo .docx/.txt ou cole o texto da demanda.";
   }
   window.addEventListener("pageshow", limparResultado);
 
   return criarGrade([
-    criarBloco({ titulo: "Enviar demanda", colunas: 6, conteudo: [el("div", { class: "linha" }, [enviar, inputArq]), status] }),
+    criarBloco({ titulo: "Enviar demanda", colunas: 6, conteudo: [escolha, caixaArq, caixaTxt, el("div", { class: "linha" }, enviar), status] }),
     criarBloco({ titulo: "Ficha da PO", colunas: 6, conteudo: [campoTitulo, el("div", { class: "linha" }, baixar)] }),
     criarBloco({ titulo: "Resultado", colunas: 12, conteudo: resultado }),
   ]);
@@ -427,20 +524,97 @@ function montarTelaIngestao() {
 
 function montarTelaDashboard() {
   const kTotal = criarKpi("Máquinas"), kMax = criarKpi("Mais sobrecarregada"), kMedia = criarKpi("Carga média");
-  const barras = criarGrafico("barras", "bar", { indexAxis: "y" });
-  const histo = criarGrafico("histograma", "bar", { scales: { y: { ticks: { precision: 0 } } } });
+  const barras = criarGrafico("barras", "bar", {
+    indexAxis: "y",
+    scales: {
+      x: {
+        title: { display: true, text: "Carga (horas)" },
+        ticks: { callback: valor => Number(valor).toFixed(1) },
+      },
+    },
+  });
+  // const histo = criarGrafico("histograma", "bar", { scales: { y: { ticks: { precision: 0 } } } });
   const aviso = el("div", { class: "rotulo" });
   const status = el("span", { class: "rotulo", text: "Ainda não atualizado." });
+  const listaTasks = el("div", { class: "lista-tasks" });
+  const avisoArquivadas = el("p", {
+    class: "rotulo",
+    text: "A listagem de demandas arquivadas e a restauração dependem de rotas da API que não estão disponíveis no servidor atual.",
+  });
+
+  function criarListaTasks(filas) {
+    listaTasks.replaceChildren();
+    const comTasks = filas.filter(f => f.tasks.length);
+    if (!comTasks.length) {
+      listaTasks.append(el("p", { class: "rotulo", text: "Nenhuma task disponível nas filas." }));
+      return;
+    }
+
+    comTasks.forEach(fila => {
+      const cabecalho = el("h3", { text: `${fila.nome} · ${fila.tasks.length} task(s)` });
+      const cabecalhoTabela = el("tr", {}, [
+        el("th", { text: "PO" }),
+        el("th", { text: "Operação" }),
+        el("th", { text: "Produto" }),
+        el("th", { text: "Tempo total (h)" }),
+        el("th", { text: "Ações" }),
+      ]);
+      const linhas = fila.tasks.map(task => {
+        const concluir = criarBotao("Concluída", async () => {
+          const identificacao = task.titulo_po || `task ${task.indice}`;
+          if (!window.confirm(`Confirma a conclusão de ${identificacao} na fila de ${fila.nome}?`)) return;
+          await alterarTaskFila(fila.codigo, task.indice, "Concluido");
+          await carregar(false);
+          toast(`Task ${identificacao} marcada como concluída.`);
+        }, { secundario: true });
+        const motivo = el("select", { "aria-label": `Motivo da exclusão de ${task.titulo_po || task.indice}` }, [
+          el("option", { value: "", text: "Selecione o motivo..." }),
+          el("option", { value: "concluido", text: "Concluída" }),
+          el("option", { value: "falhou", text: "Falhou" }),
+          el("option", { value: "reavaliacao", text: "Reavaliação" }),
+        ]);
+        const excluir = criarBotao("Excluir", async () => {
+          const identificacao = task.titulo_po || `task ${task.indice}`;
+          if (!motivo.value) throw new Error("Selecione o motivo da exclusão.");
+          const motivoSelecionado = motivo.options[motivo.selectedIndex].text;
+          await alterarTaskFila(fila.codigo, task.indice, motivo.value);
+          await carregar(false);
+          toast(`${identificacao} removida da fila: ${motivoSelecionado}.`);
+        }, { secundario: true });
+        excluir.classList.add("perigo");
+        return el("tr", {}, [
+          el("td", { text: task.titulo_po || "—" }),
+          el("td", { text: task.operacao || "—" }),
+          el("td", { text: task.produto || "—" }),
+          el("td", { text: formatarHoras(task.tempo_total_min) }),
+          el("td", {}, el("div", { class: "acoes-task" }, [concluir, motivo, excluir])),
+        ]);
+      });
+      const tabela = el("div", { class: "tabela-tasks" }, [
+        el("table", {}, [
+          el("thead", {}, cabecalhoTabela),
+          el("tbody", {}, linhas),
+        ]),
+      ]);
+      listaTasks.append(el("section", { class: "maquina-tasks" }, [cabecalho, tabela]));
+    });
+  }
 
   function limpar(msg) {
     kTotal.definir("—"); kMax.definir("—"); kMedia.definir("—");
-    barras.atualizar([], []); histo.atualizar([], []);
+    barras.atualizar([], []);
     aviso.textContent = msg;
   }
 
   async function carregar(manual = false) {
     const hora = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
     const filas = normalizarFilas(await buscarFilas()).sort((a, b) => b.valor - a.valor);
+    await Promise.all(filas.filter(f => f.quantidade > 0).map(async fila => {
+      const dados = await buscarTasksMaquina(fila.codigo);
+      fila.tasks = Array.isArray(dados?.tasks) ? dados.tasks : [];
+    }));
+    criarListaTasks(filas);
+    status.textContent = `Atualizado às ${hora} · ${filas.length} máquina(s) na fila.`;
     if (!filas.length) {
       limpar("Nenhuma demanda na fila no momento.");
       status.textContent = `Nenhuma demanda na fila (atualizado às ${hora}).`;
@@ -449,31 +623,26 @@ function montarTelaDashboard() {
     }
     const max = filas[0], soma = filas.reduce((s, f) => s + f.valor, 0), media = soma / filas.length;
     kTotal.definir(filas.length);
-    kMax.definir(`${max.nome} (${max.valor.toFixed(2)} min)`);
-    kMedia.definir(`${media.toFixed(2)} min`);
+    kMax.definir(`${max.nome} (${formatarHoras(max.valor)})`);
+    kMedia.definir(formatarHoras(media));
 
     // barras: cinza escuro = acima de 1,25× a média; cinza claro = normal
     const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-    barras.atualizar(filas.map(f => f.nome), filas.map(f => f.valor), filas.map(f => f.valor > media * 1.25 ? css("--cor-destaque") : css("--cor-barra")));
+    barras.atualizar(
+      filas.map(f => f.nome),
+      filas.map(f => f.valor / 60),
+      filas.map(f => f.valor > media * 1.25 ? css("--cor-destaque") : css("--cor-barra")),
+    );
     barras._cores = true;
-
-    // histograma: distribuição das cargas em 6 faixas
-    const lo = Math.min(...filas.map(f => f.valor)), hi = max.valor, n = 6, passo = Math.max((hi - lo) / n, 1e-9);
-    const cont = Array(n).fill(0);
-    filas.forEach(f => cont[Math.min(n - 1, Math.floor((f.valor - lo) / passo))]++);
-    histo.atualizar(cont.map((_, i) => `${(lo + i * passo).toFixed(0)}–${(lo + (i + 1) * passo).toFixed(0)}`), cont);
-    aviso.textContent = "Barras em cinza escuro: carga acima de 125% da média.";
-    status.textContent = `Atualizado às ${hora} · ${filas.length} máquina(s) na fila.`;
     if (manual) toast("Filas atualizadas.");
   }
 
   const grade = criarGrade([
     criarBloco({ colunas: 12, conteudo: el("div", { class: "topo-dash" }, [criarBotao("↻ Atualizar filas", () => carregar(true), { secundario: true }), status]) }),
     kTotal, kMax, kMedia,
-    criarBloco({ titulo: "Carga por máquina", colunas: 8, conteudo: [barras.elemento, aviso] }),
-    criarBloco({ titulo: "Histograma de cargas", colunas: 4, conteudo: histo.elemento }),
-    criarBloco({ titulo: "Espaço reservado — ex.: tendência diária", colunas: 6, conteudo: criarEspacoReservado("Encaixe um gráfico aqui") }),
-    criarBloco({ titulo: "Espaço reservado — ex.: tabela de alertas", colunas: 6, conteudo: criarEspacoReservado("Encaixe uma tabela ou KPI aqui") }),
+    criarBloco({ titulo: "Carga por Máquina", colunas: 8, conteudo: [barras.elemento, aviso] }),
+    criarBloco({ titulo: "Demandas concluídas e excluídas", colunas: 4, conteudo: avisoArquivadas }),
+    criarBloco({ titulo: "Tasks nas filas", colunas: 12, conteudo: listaTasks }),
   ]);
   grade.carregar = carregar;
   return grade;
@@ -489,8 +658,8 @@ function montarTelaDashboard() {
   const ingestao = montarTelaIngestao();
   const dash = montarTelaDashboard();
   const abas = criarAbas([
-    { id: "ingestao", titulo: "Ingestão de demanda", conteudo: ingestao },
     { id: "dash", titulo: "Dashboard", conteudo: dash, aoAbrir: () => dash.carregar && dash.carregar().catch(e => toast(e.message, true)) },
+    { id: "ingestao", titulo: "Ingestão de demanda", conteudo: ingestao },
   ]);
   document.getElementById("app").append(criarCabecalho(), abas.barra, abas.area);
 })();
