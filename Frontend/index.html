@@ -40,14 +40,23 @@
   @media(max-width:600px){.form-demanda{grid-template-columns:1fr}.form-demanda .campo-largo{grid-column:auto}}
   .linha{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
   .lista-arquivadas{display:grid;gap:10px}.categoria-arquivada{background:#fff;border-radius:8px;padding:12px}.categoria-arquivada h3{font-size:14px;margin:0 0 8px}.arquivo-arquivado{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid #e8ecf3;font-size:12px;overflow-wrap:anywhere}
+  .kpi{position:relative;min-height:46px;display:flex;align-items:center;justify-content:center;padding-top:14px}
   .kpi .valor{font-size:26px;font-weight:700;color:var(--cor-destaque);text-align:center}
+  .kpi .rotulo{position:absolute;top:0;left:0;right:0;text-align:center}
   .rotulo{color:var(--cor-suave);font-size:13px} p.rotulo{margin:10px 0 0}
   .botao.grande{padding:14px 26px;font-size:15px}
   .topo-dash{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
   .reservado{border:2px dashed #aab2bc;border-radius:var(--raio);display:flex;align-items:center;justify-content:center;color:var(--cor-suave);min-height:200px;text-align:center;padding:12px}
   table{border-collapse:collapse;width:100%;font-size:13px} th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #e8ecf3} th{background:#f6f8fb;position:sticky;top:0}
   .rolagem{max-height:320px;overflow:auto;background:#fff;border-radius:8px}
-  .lista-tasks{display:grid;gap:14px}.maquina-tasks{background:#fff;border-radius:8px;padding:14px;min-width:0}.maquina-tasks h3{font-size:14px;margin:0 0 10px}.tabela-tasks{overflow-x:auto}.tabela-tasks table{min-width:720px}.acoes-task{display:flex;gap:6px;white-space:nowrap;align-items:center}.acoes-task select{max-width:145px;padding:8px;border:1px solid #cfd4da;border-radius:8px;background:#fff;font:inherit}.botao.perigo{color:#a52d25;border-color:#d6a09b}
+  .lista-tasks{display:grid;gap:14px}.maquina-tasks{background:#fff;border-radius:8px;padding:14px;min-width:0}.maquina-tasks h3{font-size:14px;margin:0 0 10px}.tabela-tasks{overflow-x:auto}.tabela-tasks table{min-width:720px}.acoes-task{display:flex;gap:6px;white-space:nowrap;align-items:center}.botao.perigo{color:#a52d25;border-color:#d6a09b}
+  .modal-exclusao{width:min(420px,calc(100% - 32px));border:0;border-radius:12px;padding:22px;background:var(--cor-bloco);color:var(--cor-texto);box-shadow:0 12px 40px rgba(0,0,0,.25)}
+  .modal-exclusao::backdrop{background:rgba(20,25,32,.55)}
+  .modal-exclusao h2{font-size:18px;margin:0 0 8px}
+  .modal-exclusao p{font-size:13px;margin:0 0 16px}
+  .modal-exclusao label{display:grid;gap:7px;font-size:13px;font-weight:600}
+  .modal-exclusao select{width:100%;padding:10px;border:1px solid #cfd4da;border-radius:8px;background:#fff;font:inherit}
+  .modal-exclusao .acoes-modal{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
   .toast{position:fixed;bottom:20px;right:20px;background:#1c2430;color:#fff;padding:12px 18px;border-radius:8px;opacity:0;transition:.3s;pointer-events:none;max-width:360px}
   .toast.mostra{opacity:1} .toast.erro{background:#c0362c}
   .canvas-wrap{position:relative;height:300px;background:#fff;border-radius:8px;padding:10px}
@@ -293,7 +302,17 @@ async function chamarApi(caminho, opcoes = {}) {
     );
   }
   if (!r.ok) {
-    let detalhe = ""; try { detalhe = (await r.json()).detail ?? ""; } catch {}
+    const corpo = await r.text();
+    let detalhe = corpo;
+    if (corpo) {
+      try {
+        const resposta = JSON.parse(corpo);
+        const erro = resposta?.detail ?? resposta?.message;
+        detalhe = typeof erro === "string" ? erro : erro ? JSON.stringify(erro) : corpo;
+      } catch {
+        detalhe = corpo;
+      }
+    }
     throw new Error(`Erro ${r.status} em ${caminho}${detalhe ? ": " + (typeof detalhe === "string" ? detalhe : JSON.stringify(detalhe)) : ""}`);
   }
   return r;
@@ -615,19 +634,13 @@ function montarTelaDashboard() {
           await carregar(false);
           toast(`Task ${identificacao} marcada como concluída.`);
         }, { secundario: true });
-        const motivo = el("select", { "aria-label": `Motivo da exclusão de ${task.titulo_po || task.indice}` }, [
-          el("option", { value: "", text: "Selecione o motivo..." }),
-          el("option", { value: "concluido", text: "Concluída" }),
-          el("option", { value: "falhou", text: "Falhou" }),
-          el("option", { value: "reavaliacao", text: "Reavaliação" }),
-        ]);
         const excluir = criarBotao("Excluir", async () => {
           const identificacao = task.titulo_po || `task ${task.indice}`;
-          if (!motivo.value) throw new Error("Selecione o motivo da exclusão.");
-          const motivoSelecionado = motivo.options[motivo.selectedIndex].text;
-          await alterarTaskFila(fila.codigo, task.indice, motivo.value);
-          await carregar(false);
-          toast(`${identificacao} removida da fila: ${motivoSelecionado}.`);
+          abrirModalExclusao(identificacao, async motivo => {
+            await alterarTaskFila(fila.codigo, task.indice, motivo.value);
+            await carregar(false);
+            toast(`${identificacao} removida da fila: ${motivo.label}.`);
+          });
         }, { secundario: true });
         excluir.classList.add("perigo");
         return el("tr", {}, [
@@ -635,7 +648,7 @@ function montarTelaDashboard() {
           el("td", { text: task.operacao || "—" }),
           el("td", { text: task.produto || "—" }),
           el("td", { text: formatarHoras(task.tempo_total_min) }),
-          el("td", {}, el("div", { class: "acoes-task" }, [concluir, motivo, excluir])),
+          el("td", {}, el("div", { class: "acoes-task" }, [concluir, excluir])),
         ]);
       });
       const tabela = el("div", { class: "tabela-tasks" }, [
@@ -646,6 +659,48 @@ function montarTelaDashboard() {
       ]);
       listaTasks.append(el("section", { class: "maquina-tasks" }, [cabecalho, tabela]));
     });
+  }
+
+  function abrirModalExclusao(identificacao, aoConfirmar) {
+    const dialog = el("dialog", { class: "modal-exclusao", "aria-labelledby": "titulo-modal-exclusao" });
+    const select = el("select", { "aria-label": "Motivo da exclusão" }, [
+      el("option", { value: "", text: "Selecione o motivo..." }),
+      el("option", { value: "concluido", text: "Concluída" }),
+      el("option", { value: "falhou", text: "Falhou" }),
+      el("option", { value: "reavaliacao", text: "Reavaliação" }),
+    ]);
+    const fechar = () => {
+      dialog.close();
+      dialog.remove();
+    };
+    const cancelar = criarBotao("Cancelar", fechar, { secundario: true });
+    const confirmar = criarBotao("Confirmar exclusão", async () => {
+      if (!select.value) {
+        toast("Selecione o motivo da exclusão.", true);
+        select.focus();
+        return;
+      }
+      const motivo = { value: select.value, label: select.options[select.selectedIndex].text };
+      fechar();
+      await aoConfirmar(motivo);
+    });
+    confirmar.classList.add("perigo");
+    dialog.append(
+      el("h2", { id: "titulo-modal-exclusao", text: "Excluir demanda" }),
+      el("p", { text: `Selecione o motivo para excluir ${identificacao} da fila.` }),
+      el("label", {}, [
+        el("span", { text: "Motivo da exclusão" }),
+        select,
+      ]),
+      el("div", { class: "acoes-modal" }, [cancelar, confirmar]),
+    );
+    dialog.addEventListener("cancel", event => {
+      event.preventDefault();
+      fechar();
+    }, { once: true });
+    document.body.append(dialog);
+    dialog.showModal();
+    select.focus();
   }
 
   function limpar(msg) {
@@ -689,9 +744,9 @@ function montarTelaDashboard() {
   const grade = criarGrade([
     criarBloco({ colunas: 12, conteudo: el("div", { class: "topo-dash" }, [criarBotao("↻ Atualizar filas", () => carregar(true), { secundario: true }), status]) }),
     kTotal, kMax, kMedia,
-    criarBloco({ titulo: "Carga por Máquina", colunas: 8, conteudo: [barras.elemento, aviso] }),
-    criarBloco({ titulo: "Arquivos concluídos e excluídos", colunas: 4, conteudo: listaArquivadas }),
-    criarBloco({ titulo: "Tasks nas filas", colunas: 12, conteudo: listaTasks }),
+    criarBloco({ titulo: "Carga por Máquina", colunas: 12, conteudo: [barras.elemento, aviso] }),
+    criarBloco({ titulo: "Demandas", colunas: 12, conteudo: listaTasks }),
+    criarBloco({ titulo: "Histórico Demandas", colunas: 12, conteudo: listaArquivadas }),
   ]);
   grade.carregar = carregar;
   return grade;
