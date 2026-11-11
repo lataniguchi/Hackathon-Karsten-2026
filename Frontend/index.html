@@ -341,6 +341,23 @@ const enviarArquivo = async arquivo => {
   const fd = new FormData(); fd.append(CONFIG.CAMPO_ARQUIVO, arquivo);
   return (await chamarApi("/api/calcular-demanda", { method: "POST", body: fd })).json();
 };
+const enviarArquivoJson = async arquivo => {
+  let payload;
+  try {
+    payload = JSON.parse(await arquivo.text());
+  } catch {
+    throw new Error("O arquivo .json está inválido. Verifique a sintaxe e tente novamente.");
+  }
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)
+    || typeof payload.texto !== "string" || !payload.texto.trim()) {
+    throw new Error('O arquivo .json deve conter um campo "texto" preenchido.');
+  }
+  return (await chamarApi("/api/calcular-demanda-json-texto", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ texto: payload.texto }),
+  })).json();
+};
 const enviarTexto = async texto =>
   (await chamarApi("/api/calcular-demanda-texto", {
     method: "POST", headers: { "Content-Type": "text/plain;charset=UTF-8" },
@@ -409,9 +426,9 @@ function acharTituloPO(resp) {
    ===================================================================== */
 function montarTelaIngestao() {
   const btArq = el("button", { class: "ativa", text: "📄 Enviar arquivo" });
-  const btTxt = el("button", { text: "✏️ Colar texto" });
+  const btTxt = el("button", { text: "✏️ Inserir Manualmente" });
   const escolha = el("div", { class: "escolha" }, [btArq, btTxt]);
-  const inputArq = el("input", { type: "file", accept: ".docx,.txt", class: "oculto" });
+  const inputArq = el("input", { type: "file", accept: ".docx,.txt,.json", class: "oculto" });
   const nomeArquivo = el("span", { class: "rotulo", text: "Nenhum arquivo selecionado." });
   const selecionarArquivo = criarBotao("Selecionar arquivo", () => inputArq.click(), { secundario: true });
   const caixaArq = el("div", { class: "linha" }, [selecionarArquivo, inputArq, nomeArquivo]);
@@ -445,7 +462,7 @@ function montarTelaIngestao() {
     el("div", { class: "form-demanda" }, camposTexto.map(campo => entradasTexto[campo.chave].label)),
   ]);
   const resultado = el("div");
-  const status = el("p", { class: "rotulo", text: "Selecione um arquivo .docx/.txt ou cole o texto da demanda." });
+  const status = el("p", { class: "rotulo", text: "Selecione um arquivo .docx, .txt ou .json, ou insira os dados manualmente." });
   const campoTitulo = el("input", {
     type: "text",
     placeholder: "Arquivo gerado (ex.: PO-SL-056)",
@@ -520,13 +537,15 @@ function montarTelaIngestao() {
       let origem;
       if (modo === "arquivo") {
         const arquivo = inputArq.files[0];
-        if (!arquivo) throw new Error("Selecione um arquivo .docx ou .txt.");
-        if (!/\.(docx|txt)$/i.test(arquivo.name)) {
-          throw new Error("Formato não suportado. Envie uma demanda em .docx ou .txt.");
+        if (!arquivo) throw new Error("Selecione um arquivo .docx, .txt ou .json.");
+        if (!/\.(docx|txt|json)$/i.test(arquivo.name)) {
+          throw new Error("Formato não suportado. Envie uma demanda em .docx, .txt ou .json.");
         }
         origem = arquivo.name;
         status.textContent = `Calculando "${origem}"…`;
-        resp = await enviarArquivo(arquivo);
+        resp = /\.json$/i.test(arquivo.name)
+          ? await enviarArquivoJson(arquivo)
+          : await enviarArquivo(arquivo);
       } else {
         const faltantes = camposTexto
           .filter(campo => !entradasTexto[campo.chave].entrada.value.trim())
@@ -568,7 +587,7 @@ function montarTelaIngestao() {
     Object.values(entradasTexto).forEach(({ entrada }) => { entrada.value = ""; });
     campoTitulo.value = "";
     resultado.replaceChildren();
-    status.textContent = "Selecione um arquivo .docx/.txt ou cole o texto da demanda.";
+    status.textContent = "Selecione um arquivo .docx, .txt ou .json, ou insira os dados manualmente.";
   }
   window.addEventListener("pageshow", limparResultado);
 
