@@ -39,6 +39,7 @@
   .form-demanda .campo-largo{grid-column:1/-1}
   @media(max-width:600px){.form-demanda{grid-template-columns:1fr}.form-demanda .campo-largo{grid-column:auto}}
   .linha{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+  .lista-arquivadas{display:grid;gap:10px}.categoria-arquivada{background:#fff;border-radius:8px;padding:12px}.categoria-arquivada h3{font-size:14px;margin:0 0 8px}.arquivo-arquivado{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid #e8ecf3;font-size:12px;overflow-wrap:anywhere}
   .kpi .valor{font-size:26px;font-weight:700;color:var(--cor-destaque);text-align:center}
   .rotulo{color:var(--cor-suave);font-size:13px} p.rotulo{margin:10px 0 0}
   .botao.grande{padding:14px 26px;font-size:15px}
@@ -343,6 +344,7 @@ async function baixarFichaPO(titulo) {
   toast("Download iniciado: " + nome);
 }
 const buscarFilas = async () => (await chamarApi("/api/filas")).json();
+const buscarArquivosArquivados = async () => (await chamarApi("/api/arquivos-arquivados")).json();
 const buscarTasksMaquina = async codigo =>
   (await chamarApi(`/api/filas/${encodeURIComponent(codigo)}/tasks`)).json();
 const alterarTaskFila = async (codigo, indice, motivo) =>
@@ -351,6 +353,15 @@ const alterarTaskFila = async (codigo, indice, motivo) =>
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ motivo }),
   })).json();
+const restaurarArquivoArquivado = async (categoria, nomeArquivo, recolocarNaFila) =>
+  (await chamarApi(
+    `/api/arquivos-arquivados/${encodeURIComponent(categoria)}/${encodeURIComponent(nomeArquivo)}/restaurar`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ recolocar_na_fila: recolocarNaFila }),
+    },
+  )).json();
 
 /* Normaliza a resposta de /api/filas para [{nome, valor}] (aceita vários formatos) */
 function normalizarFilas(dados) {
@@ -537,10 +548,47 @@ function montarTelaDashboard() {
   const aviso = el("div", { class: "rotulo" });
   const status = el("span", { class: "rotulo", text: "Ainda não atualizado." });
   const listaTasks = el("div", { class: "lista-tasks" });
-  const avisoArquivadas = el("p", {
-    class: "rotulo",
-    text: "A listagem de demandas arquivadas e a restauração dependem de rotas da API que não estão disponíveis no servidor atual.",
-  });
+  const listaArquivadas = el("div", { class: "lista-arquivadas" });
+
+  async function carregarArquivadas() {
+    const dados = await buscarArquivosArquivados();
+    listaArquivadas.replaceChildren();
+    const categorias = Array.isArray(dados?.categorias) ? dados.categorias : [];
+    const total = categorias.reduce((soma, categoria) => soma + (categoria.arquivos?.length || 0), 0);
+    if (!total) {
+      listaArquivadas.append(el("p", { class: "rotulo", text: "Nenhum arquivo arquivado disponível." }));
+      return;
+    }
+
+    categorias.filter(categoria => categoria.arquivos?.length).forEach(categoria => {
+      const itens = categoria.arquivos.map(arquivo => {
+        const restaurar = criarBotao("Restaurar", async () => {
+          const recolocarNaFila = window.confirm(
+            `Deseja também colocar a task de ${arquivo.nome_arquivo} de volta na fila?`,
+          );
+          await restaurarArquivoArquivado(
+            categoria.categoria,
+            arquivo.nome_arquivo,
+            recolocarNaFila,
+          );
+          await carregar(false);
+          toast(
+            recolocarNaFila
+              ? "Arquivo restaurado e task recolocada na fila."
+              : "Arquivo restaurado. A task não foi recolocada na fila.",
+          );
+        }, { secundario: true });
+        return el("div", { class: "arquivo-arquivado" }, [
+          el("span", { text: arquivo.nome_arquivo }),
+          restaurar,
+        ]);
+      });
+      listaArquivadas.append(el("section", { class: "categoria-arquivada" }, [
+        el("h3", { text: `${categoria.nome_categoria} · ${itens.length}` }),
+        ...itens,
+      ]));
+    });
+  }
 
   function criarListaTasks(filas) {
     listaTasks.replaceChildren();
@@ -608,6 +656,7 @@ function montarTelaDashboard() {
 
   async function carregar(manual = false) {
     const hora = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    await carregarArquivadas();
     const filas = normalizarFilas(await buscarFilas()).sort((a, b) => b.valor - a.valor);
     await Promise.all(filas.filter(f => f.quantidade > 0).map(async fila => {
       const dados = await buscarTasksMaquina(fila.codigo);
@@ -641,7 +690,7 @@ function montarTelaDashboard() {
     criarBloco({ colunas: 12, conteudo: el("div", { class: "topo-dash" }, [criarBotao("↻ Atualizar filas", () => carregar(true), { secundario: true }), status]) }),
     kTotal, kMax, kMedia,
     criarBloco({ titulo: "Carga por Máquina", colunas: 8, conteudo: [barras.elemento, aviso] }),
-    criarBloco({ titulo: "Demandas concluídas e excluídas", colunas: 4, conteudo: avisoArquivadas }),
+    criarBloco({ titulo: "Arquivos concluídos e excluídos", colunas: 4, conteudo: listaArquivadas }),
     criarBloco({ titulo: "Tasks nas filas", colunas: 12, conteudo: listaTasks }),
   ]);
   grade.carregar = carregar;

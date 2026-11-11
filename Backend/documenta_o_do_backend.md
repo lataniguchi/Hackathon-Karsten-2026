@@ -101,6 +101,22 @@ A API aceita 3 formas diferentes de processar a demanda, garantindo flexibilidad
 
   * **Body (JSON):** `{"motivo": "Concluido"}` (Pode ser Concluido, Falhou, Reavaliacao, etc).
 
+* **`GET /api/arquivos-arquivados`**
+
+  * **Uso:** Lista os arquivos arquivados nas categorias Concluído, Falhou, Reavaliação e Excluído.
+
+  * **Limite:** Retorna os 10 arquivos mais recentes por categoria. Arquivos mais antigos permanecem no disco.
+
+* **`POST /api/arquivos-arquivados/{categoria}/{nome_arquivo}/restaurar`**
+
+  * **Uso:** Move o XLSX arquivado para a pasta principal de saída e acrescenta `_restaurado` ao nome.
+
+  * **Categorias:** `concluido`, `falhou`, `reavaliacao` e `excluido`.
+
+  * **Body (JSON):** `{"recolocar_na_fila": true}` ou `{"recolocar_na_fila": false}`. O cliente deve perguntar ao usuário antes de enviar essa escolha. Quando verdadeiro, a task é reconstruída a partir da planilha e recolocada na fila da máquina.
+
+  * **Observação:** A restauração remove o arquivo da categoria arquivada. Se o nome restaurado já existir, a API retorna conflito sem sobrescrever arquivos.
+
 * **`DELETE /api/filas`**
 
   * **Uso:** Esvazia as filas de todas as máquinas de uma vez. O "botão vermelho" de fim de turno.

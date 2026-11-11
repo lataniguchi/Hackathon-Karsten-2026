@@ -27,6 +27,7 @@ from testes.test_rotas_api import (
     test_rota_consulta_bases,
     test_rota_ingestao_e_calculo_texto,
     test_rota_remocao_tarefa_fila,
+    test_listagem_limitada_e_restauracao_de_arquivado,
 )
 
 CAMINHO_HISTORICO = ROOT_DIR / "testes" / "historico.txt"
@@ -44,6 +45,7 @@ def executar():
         ("Rota de ingestao e calculo (/api/calcular...)", test_rota_ingestao_e_calculo_texto),
         ("Inclusao e balanceamento em fila", test_rota_adicao_e_balanceamento_fila),
         ("Remocao de tarefa da fila com motivo", test_rota_remocao_tarefa_fila),
+        ("Listagem limitada e restauracao de arquivo", test_listagem_limitada_e_restauracao_de_arquivado),
         ("Teste de Carga - Estagio 1: 20 requisicoes", test_carga_estagio_20),
         ("Teste de Carga - Estagio 2: 50 requisicoes", test_carga_estagio_50),
         ("Teste de Carga - Estagio 3: 100 requisicoes", test_carga_estagio_100),

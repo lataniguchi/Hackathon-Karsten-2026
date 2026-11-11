@@ -2,18 +2,33 @@
 
 import re
 from pathlib import Path
+from zipfile import BadZipFile
+
+import openpyxl
 
 from .. import state
 from ..bases.service import carregar_bases
 from ..config import PASTA_SAIDA
 from ..types import (
+    CategoriaArquivada,
+    ListaArquivosArquivados,
     RemocaoTask,
+    RestauracaoArquivo,
     ResumoFilas,
     ResumoMaquinaFila,
+    TaskFila,
     TaskFilaNumerada,
     TaskRemovida,
     TasksMaquina,
 )
+
+LIMITE_ARQUIVOS_ARQUIVADOS = 10
+CATEGORIAS_ARQUIVADAS: dict[str, tuple[str, tuple[str, ...]]] = {
+    "concluido": ("Concluído", ("Concluido", "Concluído")),
+    "falhou": ("Falhou", ("Falhou",)),
+    "reavaliacao": ("Reavaliação", ("Reavaliacao", "Reavaliação")),
+    "excluido": ("Excluído", ()),
+}
 
 
 def obter_resumo_filas() -> ResumoFilas:
@@ -150,6 +165,152 @@ def deletar_task_maquina(codigo_maquina: int, indice: int, motivo: str) -> Remoc
         "caminho_arquivo_renomeado": caminho_arquivo_renomeado,
         "task_removida": task_removida_com_motivo,
         **listar_tasks_maquina(codigo_maquina),
+    }
+
+
+def listar_arquivos_arquivados() -> ListaArquivosArquivados:
+    """Lista até dez arquivos mais recentes por categoria, sem apagar os antigos."""
+    categorias: list[CategoriaArquivada] = []
+    for categoria, (nome_categoria, pastas) in CATEGORIAS_ARQUIVADAS.items():
+        if categoria == "excluido":
+            candidatos = [
+                caminho
+                for caminho in PASTA_SAIDA.glob("*.xlsx")
+                if caminho.is_file() and _eh_arquivo_personalizado_arquivado(caminho)
+            ]
+        else:
+            candidatos = [
+                caminho
+                for pasta in pastas
+                for caminho in (PASTA_SAIDA / pasta).glob("*.xlsx")
+                if caminho.is_file()
+            ]
+
+        candidatos.sort(
+            key=lambda caminho: (caminho.stat().st_mtime_ns, caminho.name),
+            reverse=True,
+        )
+        categorias.append(
+            {
+                "categoria": categoria,
+                "nome_categoria": nome_categoria,
+                "arquivos": [
+                    {"nome_arquivo": caminho.name}
+                    for caminho in candidatos[:LIMITE_ARQUIVOS_ARQUIVADOS]
+                ],
+            }
+        )
+    return {"categorias": categorias}
+
+
+def _eh_arquivo_personalizado_arquivado(caminho: Path) -> bool:
+    return "_" in caminho.stem and not caminho.stem.endswith("_restaurado")
+
+
+def _criar_task_a_partir_da_planilha(caminho: Path) -> TaskFila:
+    """Reconstrói os dados da fila a partir do layout de uma ficha PO gerada."""
+    workbook = None
+    try:
+        workbook = openpyxl.load_workbook(caminho, data_only=True, read_only=True)
+        planilha = workbook["PO"]
+        codigo_maquina = int(planilha["A6"].value)
+        titulo_po = planilha["A1"].value
+        operacao = str(planilha["B2"].value or "")
+        produto = f"{planilha['A4'].value or ''} ({planilha['B4'].value or ''})"
+        tempo_fixo = float(planilha["E8"].value)
+        tempo_mtm = round(
+            sum(
+                float(planilha.cell(row=linha, column=5).value or 0)
+                for linha in range(9, planilha.max_row + 1)
+            ),
+            4,
+        )
+    except (
+        KeyError,
+        TypeError,
+        ValueError,
+        OSError,
+        BadZipFile,
+        openpyxl.utils.exceptions.InvalidFileException,
+    ) as erro:
+        raise ValueError(
+            f"Não foi possível reconstruir a task a partir da planilha {caminho.name}."
+        ) from erro
+    finally:
+        if workbook is not None:
+            workbook.close()
+
+    return {
+        "codigo_de_maquina": codigo_maquina,
+        "titulo_po": str(titulo_po) if titulo_po is not None else None,
+        "operacao": operacao,
+        "produto": produto,
+        "tempo_fixo_min": tempo_fixo,
+        "tempo_mtm_min": tempo_mtm,
+        "tempo_total_min": round(tempo_fixo + tempo_mtm, 4),
+        "arquivo_gerado": caminho.name,
+    }
+
+
+def restaurar_arquivo_arquivado(
+    categoria: str,
+    nome_arquivo: str,
+    recolocar_na_fila: bool,
+) -> RestauracaoArquivo:
+    """Move um arquivo arquivado de volta à saída e, se pedido, recupera sua task."""
+    if categoria not in CATEGORIAS_ARQUIVADAS:
+        raise ValueError(f"Categoria de arquivo inválida: {categoria}.")
+    if Path(nome_arquivo).name != nome_arquivo or "/" in nome_arquivo or "\\" in nome_arquivo:
+        raise ValueError("Informe somente o nome do arquivo, sem diretórios.")
+    if Path(nome_arquivo).suffix.casefold() != ".xlsx":
+        raise ValueError("Somente arquivos XLSX podem ser restaurados.")
+
+    _, pastas = CATEGORIAS_ARQUIVADAS[categoria]
+    if categoria == "excluido":
+        caminho_raiz = PASTA_SAIDA / nome_arquivo
+        candidatos = (
+            [caminho_raiz]
+            if _eh_arquivo_personalizado_arquivado(caminho_raiz)
+            else []
+        )
+    else:
+        candidatos = [PASTA_SAIDA / pasta / nome_arquivo for pasta in pastas]
+    caminho_origem = next((caminho for caminho in candidatos if caminho.is_file()), None)
+    if caminho_origem is None:
+        raise FileNotFoundError(f"Arquivo arquivado não encontrado: {nome_arquivo}.")
+
+    caminho_destino = PASTA_SAIDA / (
+        f"{caminho_origem.stem}_restaurado{caminho_origem.suffix}"
+    )
+    if caminho_destino.exists():
+        raise FileExistsError(
+            f"Já existe um arquivo restaurado com o nome {caminho_destino.name}."
+        )
+
+    task: TaskFila | None = None
+    if recolocar_na_fila:
+        task = _criar_task_a_partir_da_planilha(caminho_origem)
+        carregar_bases()
+        if task["codigo_de_maquina"] not in state.codigo_de_maquina:
+            raise ValueError(
+                f"Máquina com código {task['codigo_de_maquina']} não encontrada na base."
+            )
+        task["arquivo_gerado"] = caminho_destino.name
+
+    caminho_origem.rename(caminho_destino)
+    if task is not None:
+        state.filas_maquinas.setdefault(task["codigo_de_maquina"], []).append(task)
+
+    return {
+        "mensagem": (
+            f"Arquivo restaurado como {caminho_destino.name}."
+            + (" Task recolocada na fila." if task is not None else "")
+        ),
+        "categoria": categoria,
+        "arquivo_original": nome_arquivo,
+        "arquivo_restaurado": caminho_destino.name,
+        "recolocado_na_fila": task is not None,
+        "task_na_fila": task,
     }
 
 

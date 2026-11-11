@@ -6,8 +6,11 @@ from fastapi.responses import FileResponse
 
 from schemas import (
     DemandaTextoSchema,
+    ListaArquivosArquivadosSchema,
     RemoverTaskResponseSchema,
     RemoverTaskSchema,
+    RestauracaoArquivoResponseSchema,
+    RestaurarArquivoSchema,
     ResumoFilasSchema,
     TasksMaquinaSchema,
 )
@@ -16,14 +19,18 @@ from services.config import PASTA_SAIDA
 from services.demanda import extrair_dados_demanda
 from services.fila import (
     deletar_task_maquina,
+    listar_arquivos_arquivados,
     listar_tasks_maquina,
     limpar_filas_maquinas,
     obter_resumo_filas,
+    restaurar_arquivo_arquivado,
 )
 from services.po import processar_calculo_po
 from services.types import (
     CalculoDemandaResponse,
     RemocaoTask,
+    ListaArquivosArquivados,
+    RestauracaoArquivo,
     ResumoFilas,
     TasksMaquina,
 )
@@ -196,6 +203,39 @@ def baixar_planilha_po(titulo_po: str):
 def consultar_filas_maquinas() -> ResumoFilas:
     """Fornece um resumo das tasks e do tempo acumulado de cada máquina."""
     return obter_resumo_filas()
+
+
+@app.get(
+    "/api/arquivos-arquivados",
+    response_model=ListaArquivosArquivadosSchema,
+)
+def consultar_arquivos_arquivados() -> ListaArquivosArquivados:
+    """Lista até dez arquivos mais recentes de cada categoria arquivada."""
+    return listar_arquivos_arquivados()
+
+
+@app.post(
+    "/api/arquivos-arquivados/{categoria}/{nome_arquivo}/restaurar",
+    response_model=RestauracaoArquivoResponseSchema,
+)
+def restaurar_arquivo(
+    categoria: str,
+    nome_arquivo: str,
+    payload: RestaurarArquivoSchema,
+) -> RestauracaoArquivo:
+    """Restaura um XLSX e permite escolher se a task volta para a fila."""
+    try:
+        return restaurar_arquivo_arquivado(
+            categoria,
+            nome_arquivo,
+            payload.recolocar_na_fila,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except FileExistsError as e:
+        raise HTTPException(status_code=409, detail=str(e)) from e
 
 
 @app.get(

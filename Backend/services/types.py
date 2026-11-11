@@ -133,6 +133,37 @@ class RemocaoTask(TypedDict):
     tasks: list[TaskFilaNumerada]
 
 
+class ArquivoArquivado(TypedDict):
+    """Arquivo que pode ser restaurado, dentro de uma categoria de arquivo."""
+
+    nome_arquivo: str
+
+
+class CategoriaArquivada(TypedDict):
+    """Arquivos arquivados de uma categoria, limitados aos dez mais recentes."""
+
+    categoria: str
+    nome_categoria: str
+    arquivos: list[ArquivoArquivado]
+
+
+class ListaArquivosArquivados(TypedDict):
+    """Categorias e arquivos atualmente disponíveis para restauração."""
+
+    categorias: list[CategoriaArquivada]
+
+
+class RestauracaoArquivo(TypedDict):
+    """Resultado da restauração de um arquivo e, opcionalmente, da task."""
+
+    mensagem: str
+    categoria: str
+    arquivo_original: str
+    arquivo_restaurado: str
+    recolocado_na_fila: bool
+    task_na_fila: TaskFila | None
+
+
 class CalculoDemandaResponse(TypedDict):
     """Resposta da API com os dados extraídos e a ficha calculada."""
 
