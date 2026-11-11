@@ -14,5 +14,6 @@ tipo_maquina: list[str] = []
 descricao: list[str] = []
 rpm: list[int] = []
 tempo_tempo_metro: list[float] = []
+versao_arquivo_bases: tuple[str, int] | None = None
 
 filas_maquinas: dict[int, list[TaskFila]] = {}

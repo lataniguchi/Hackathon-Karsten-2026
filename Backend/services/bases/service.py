@@ -13,18 +13,24 @@ logger = logging.getLogger(__name__)
 def carregar_bases() -> None:
     """Carrega em memória as abas de elementos MTM e máquinas de Entradas.xlsx.
 
-    Evita reler a planilha quando as bases já foram carregadas e inicializa
+    Relê a planilha quando o caminho ou a data de modificação mudar e inicializa
     uma fila vazia para cada máquina identificada.
     """
-    if state.descricao_do_elemento and state.codigo_de_maquina:
+    caminho_bases = CAMINHO_ENTRADAS.resolve()
+    versao_arquivo = (str(caminho_bases), caminho_bases.stat().st_mtime_ns)
+    if (
+        state.descricao_do_elemento
+        and state.codigo_de_maquina
+        and state.versao_arquivo_bases == versao_arquivo
+    ):
         return
 
     df_mtm: pd.DataFrame = pd.read_excel(
-        CAMINHO_ENTRADAS,
+        caminho_bases,
         sheet_name="MATRIZ_DE_ELEMENTOS",
     )
     df_maquinas: pd.DataFrame = pd.read_excel(
-        CAMINHO_ENTRADAS,
+        caminho_bases,
         sheet_name="TEMPO-CM",
         header=1,
     )
@@ -65,7 +71,7 @@ def carregar_bases() -> None:
     if df_maquinas.empty:
         raise ValueError(
             f"Nenhuma máquina com os campos obrigatórios foi encontrada em "
-            f"{CAMINHO_ENTRADAS.name}."
+            f"{caminho_bases.name}."
         )
 
     state.descricao_do_elemento[:] = df_mtm["Descrição do elemento"].astype(str).tolist()
@@ -90,6 +96,7 @@ def carregar_bases() -> None:
     for codigo_maquina in state.codigo_de_maquina:
         state.filas_maquinas.setdefault(codigo_maquina, [])
 
+    state.versao_arquivo_bases = versao_arquivo
     print("Variáveis da planilha Entradas.xlsx carregadas com sucesso!")
 
 

@@ -91,6 +91,8 @@ A API aceita 3 formas diferentes de processar a demanda, garantindo flexibilidad
 
   * **Uso:** Puxar os dados de `Entradas.xlsx` para preencher tabelas ou menus suspensos (Dropdowns) de máquinas e roteiros no Frontend.
 
+  * **Atualização:** As bases são recarregadas quando o arquivo `Entradas.xlsx` é alterado. O código da máquina só pode ser calculado se houver uma linha completa para ele na aba `TEMPO-CM`.
+
 * **`GET /api/filas`**
 
   * **Uso:** Retorna o status atual das filas (Tasks e Tempos Acumulados) de todas as máquinas.

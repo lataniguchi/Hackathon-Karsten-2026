@@ -6,8 +6,10 @@ import os
 import sys
 import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
 import openpyxl
+import pandas as pd
 from fastapi.testclient import TestClient
 
 # Ajuste do path para importar os modulos do Backend
@@ -23,6 +25,7 @@ from schemas import (
     RestauracaoArquivoResponseSchema,
 )
 from services import state
+from services.bases import service as bases_service
 from services.fila import service as fila_service
 from services.po import service as po_service
 from testes.dados_referencia import CASOS_DE_TESTE
@@ -131,6 +134,94 @@ def test_upload_txt_com_json_extrai_dados_da_demanda():
                 assert dados["elementos"]
         finally:
             po_service.PASTA_SAIDA = pasta_saida_original
+
+
+def test_base_recarrega_quando_planilha_muda():
+    """Valida que máquinas adicionadas à planilha são reconhecidas sem reiniciar."""
+    pasta_bases_original = bases_service.CAMINHO_ENTRADAS
+    versao_original = state.versao_arquivo_bases
+    nomes_listas = (
+        "descricao_do_elemento",
+        "codigo_do_agrupador",
+        "codigo_do_elemento",
+        "elemento_mais_agrupador",
+        "tempo",
+        "codigo_mtm_formatado",
+        "codigo_de_maquina",
+        "tipo_maquina",
+        "descricao",
+        "rpm",
+        "tempo_tempo_metro",
+    )
+    listas_originais = {
+        nome: getattr(state, nome).copy()
+        for nome in nomes_listas
+    }
+    filas_originais = {
+        codigo: [tarefa.copy() for tarefa in tarefas]
+        for codigo, tarefas in state.filas_maquinas.items()
+    }
+
+    with tempfile.TemporaryDirectory() as diretorio:
+        caminho_teste = Path(diretorio) / "Entradas.xlsx"
+        caminho_teste.touch()
+        maquinas = pd.read_excel(
+            pasta_bases_original,
+            sheet_name="TEMPO-CM",
+            header=1,
+        )
+        matriz = pd.read_excel(
+            pasta_bases_original,
+            sheet_name="MATRIZ_DE_ELEMENTOS",
+        )
+
+        def ler_planilha(
+            _caminho: Path,
+            sheet_name: str,
+            header: int | None = None,
+        ) -> pd.DataFrame:
+            return (maquinas if sheet_name == "TEMPO-CM" else matriz).copy()
+
+        try:
+            bases_service.CAMINHO_ENTRADAS = caminho_teste
+            with patch.object(bases_service.pd, "read_excel", side_effect=ler_planilha):
+                bases_service.carregar_bases()
+                assert 5 in state.codigo_de_maquina
+
+                linhas_novas = pd.DataFrame(
+                    [
+                        [6, "Torta", "Máquina teste 6", 10000, 0.05],
+                        [7, "Torta", "Máquina teste 7", 10000, 0.06],
+                    ],
+                    columns=maquinas.columns,
+                )
+                maquinas = pd.concat([maquinas, linhas_novas], ignore_index=True)
+                stat = caminho_teste.stat()
+                os.utime(
+                    caminho_teste,
+                    ns=(stat.st_atime_ns, stat.st_mtime_ns + 2_000_000_000),
+                )
+
+                bases_service.carregar_bases()
+                assert 6 in state.codigo_de_maquina
+                assert 7 in state.codigo_de_maquina
+                for codigo_maquina in (6, 7):
+                    resultado = po_service.processar_calculo_po(
+                        {
+                            **CASOS_DE_TESTE[0]["entrada"],
+                            "cod_eqp": codigo_maquina,
+                        },
+                        adicionar_na_fila=False,
+                        salvar_excel=False,
+                    )
+                    assert resultado["cabecalho"]["cod_eqp"] == codigo_maquina
+        finally:
+            bases_service.CAMINHO_ENTRADAS = pasta_bases_original
+            for nome, valores in listas_originais.items():
+                getattr(state, nome)[:] = valores
+            state.filas_maquinas.clear()
+            state.filas_maquinas.update(filas_originais)
+            state.versao_arquivo_bases = versao_original
 
 
 def test_rota_adicao_e_balanceamento_fila():
