@@ -1,9 +1,13 @@
 """CABECALHO DO ARQUIVO: leitura e consulta das bases de máquinas e elementos MTM."""
 
+import logging
+
 import pandas as pd
 
 from .. import state
 from ..config import CAMINHO_ENTRADAS
+
+logger = logging.getLogger(__name__)
 
 
 def carregar_bases() -> None:
@@ -24,6 +28,32 @@ def carregar_bases() -> None:
         sheet_name="TEMPO-CM",
         header=1,
     )
+    colunas_maquina = [
+        "Código de máquina",
+        "Tipo Máquina",
+        "Descrição",
+        "RPM",
+        "Tempo (tempo/metro",
+    ]
+    registros_incompletos = df_maquinas[colunas_maquina].isna().any(axis=1)
+    for coluna in ("Tipo Máquina", "Descrição"):
+        registros_incompletos |= (
+            df_maquinas[coluna].astype("string").str.strip().eq("").fillna(True)
+        )
+    if registros_incompletos.any():
+        linhas_ignoradas = (df_maquinas.index[registros_incompletos] + 3).tolist()
+        codigos_ignorados = (
+            df_maquinas.loc[registros_incompletos, "Código de máquina"].tolist()
+        )
+        logger.warning(
+            "Ignorando registros incompletos de máquinas em %s "
+            "(linhas do Excel: %s; códigos: %s).",
+            CAMINHO_ENTRADAS.name,
+            linhas_ignoradas,
+            codigos_ignorados,
+        )
+        df_maquinas = df_maquinas.loc[~registros_incompletos]
+
     colunas_mtm_validas = [
         "Descrição do elemento",
         "Código do agrupador",
@@ -32,6 +62,11 @@ def carregar_bases() -> None:
         "Tempo",
     ]
     df_mtm = df_mtm[colunas_mtm_validas]
+    if df_maquinas.empty:
+        raise ValueError(
+            f"Nenhuma máquina com os campos obrigatórios foi encontrada em "
+            f"{CAMINHO_ENTRADAS.name}."
+        )
 
     state.descricao_do_elemento[:] = df_mtm["Descrição do elemento"].astype(str).tolist()
     state.codigo_do_agrupador[:] = df_mtm["Código do agrupador"].astype(int).tolist()
