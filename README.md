@@ -2,12 +2,12 @@
 
 Este documento define a arquitetura do projeto e as responsabilidades de cada integrante para a reta final do hackathon. O Backend já está estruturado, modularizado e com as regras de negócio finalizadas. 
 
-**Foco agora: Integração do Frontend e Preparação para o Pitch da Banca (11/11/2026).**
+**Status:** integração do Frontend concluída; pronto para demonstração e validação.
 
 ## 🏗️ Arquitetura do Sistema (Desacoplada)
 - **Backend (Finalizado):** FastAPI (Python) estruturado em Domain-Driven Design (pacote `services/`). Validação de dados via Pydantic e geração nativa de planilhas `.xlsx` via `openpyxl`.
-- **Frontend (Em andamento):** [Streamlit / React / HTML+JS] - Responsável pela interface visual, painel de filas e consumo dinâmico da API.
-- **Flexibilidade de Ingestão:** O sistema aceita dados via Formulário estruturado, Upload de `.docx`/`.txt` ou Texto Livre (Copy/Paste).
+- **Frontend (Concluído):** painel HTML/JavaScript em `Frontend/index.html`, responsável pela ingestão de demandas, acompanhamento das filas e consumo da API.
+- **Flexibilidade de Ingestão:** aceita arquivos `.docx`, `.txt` e `.json`, além de preenchimento manual dos campos da demanda. O JSON usa o formato `{"texto": "..."}`.
 
 ---
 
@@ -25,12 +25,13 @@ Este documento define a arquitetura do projeto e as responsabilidades de cada in
 
 ### 🧑‍💻 Integrante 2: Frontend e Painel de Produção (UI/UX)
 **Responsável por:** Laís Aya
-**Status:** 🚧 Em Andamento
-**Objetivo:** Consumir a API robusta que já está no ar e criar uma interface amigável.
-**Tarefas urgentes:**
-1. Criar a tela de ingestão permitindo ao usuário escolher como enviar a demanda (Ex: Botão de Upload de Arquivo consumindo `/api/calcular-demanda` OU Caixa de Texto consumindo `/api/calcular-demanda-texto`).
-2. Adicionar o botão de **"Download Ficha PO"** que chama a rota `/api/download-po/{titulo_po}` para baixar o `.xlsx` gerado.
-3. Criar a aba **Dashboard / Filas**, consumindo `/api/filas` para gerar gráficos visuais de qual máquina está mais sobrecarregada (Balanceamento).
+**Status:** ✅ Concluído
+**O que foi entregue:**
+1. **Ingestão de demandas:** upload de `.docx` e `.txt`, envio de `.json` para a rota JSON da API e formulário manual com campos específicos.
+2. **Ficha PO:** exibição do resultado do cálculo e download da planilha `.xlsx` gerada.
+3. **Dashboard de produção:** KPIs, gráfico de carga por máquina em minutos e listagem das tasks ativas com ações para concluir ou excluir.
+4. **Gestão de filas:** exclusão com seleção de motivo, confirmação antes de concluir ou resetar todas as filas.
+5. **Histórico:** listagem de arquivos concluídos, falhos, em reavaliação e excluídos, com opção de restauração e escolha sobre recolocar a task na fila.
 
 ### Integrante 3: Qualidade (QA), Testes e Validação
 **Responsável por:** Silas Torres
@@ -61,7 +62,11 @@ O Frontend deve se conectar nestas rotas (rode o `iniciar.bat` e acesse `http://
 | `/api/bases` | `GET` | Retorna as opções de máquinas e elementos (Ideal para preencher *Selects/Dropdowns* no Front). |
 | `/api/calcular-demanda` | `POST` | Envio de arquivo físico (`.docx` ou `.txt`) via `multipart/form-data`. Calcula a PO e salva Excel. |
 | `/api/calcular-demanda-texto` | `POST` | Envio do texto da demanda colado direto em `text/plain`. Calcula a PO e salva Excel. |
+| `/api/calcular-demanda-json-texto` | `POST` | Envio de JSON no formato `{"texto": "..."}`. Calcula a PO e salva Excel. |
 | `/api/download-po/{titulo_po}` | `GET` | Baixa o arquivo `.xlsx` gerado. |
 | `/api/filas` | `GET` | Retorna o resumo de tasks de cada máquina para montar os gráficos de produtividade. |
+| `/api/filas/{codigo_maquina}/tasks` | `GET` | Lista as tasks atuais de uma máquina. |
 | `/api/filas/{codigo}/tasks/{indice}` | `DELETE` | Remove uma tarefa da fila informando um motivo (ex: "Concluido", "Falhou") no JSON. |
 | `/api/filas` | `DELETE` | Zera a fila de todas as máquinas (botão de "Reset/Fim de Expediente"). |
+| `/api/arquivos-arquivados` | `GET` | Lista arquivos de demandas concluídas, falhas, reavaliações e exclusões. |
+| `/api/arquivos-arquivados/{categoria}/{nome_arquivo}/restaurar` | `POST` | Restaura um arquivo e aceita `{"recolocar_na_fila": true/false}`. |
