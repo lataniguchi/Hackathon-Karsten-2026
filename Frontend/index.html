@@ -239,8 +239,10 @@ function criarKpi(rotulo, valor = "—") {
   return b;
 }
 
-function formatarHoras(minutos) {
-  return `${(Number(minutos || 0) / 60).toFixed(2)} h`;
+function formatarDuracao(minutos) {
+  const valor = Number(minutos) || 0;
+  const formatado = valor.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+  return `${formatado} min`;
 }
 
 /* ---- tabela ---- */
@@ -380,6 +382,8 @@ async function baixarFichaPO(titulo) {
   toast("Download iniciado: " + nome);
 }
 const buscarFilas = async () => (await chamarApi("/api/filas")).json();
+const resetarFilas = async () =>
+  (await chamarApi("/api/filas", { method: "DELETE" })).json();
 const buscarArquivosArquivados = async () => (await chamarApi("/api/arquivos-arquivados")).json();
 const buscarTasksMaquina = async codigo =>
   (await chamarApi(`/api/filas/${encodeURIComponent(codigo)}/tasks`)).json();
@@ -604,8 +608,12 @@ function montarTelaDashboard() {
     indexAxis: "y",
     scales: {
       x: {
-        title: { display: true, text: "Carga (horas)" },
-        ticks: { callback: valor => Number(valor).toFixed(1) },
+        min: 0,
+        title: { display: true, text: "Carga" },
+        ticks: {
+          stepSize: 1,
+          callback: valor => `${Number(valor)} min`,
+        },
       },
     },
   });
@@ -669,7 +677,7 @@ function montarTelaDashboard() {
         el("th", { text: "PO" }),
         el("th", { text: "Operação" }),
         el("th", { text: "Produto" }),
-        el("th", { text: "Tempo total (h)" }),
+        el("th", { text: "Tempo total" }),
         el("th", { text: "Ações" }),
       ]);
       const linhas = fila.tasks.map(task => {
@@ -693,7 +701,7 @@ function montarTelaDashboard() {
           el("td", { text: task.titulo_po || "—" }),
           el("td", { text: task.operacao || "—" }),
           el("td", { text: task.produto || "—" }),
-          el("td", { text: formatarHoras(task.tempo_total_min) }),
+          el("td", { text: formatarDuracao(task.tempo_total_min) }),
           el("td", {}, el("div", { class: "acoes-task" }, [concluir, excluir])),
         ]);
       });
@@ -773,22 +781,34 @@ function montarTelaDashboard() {
     }
     const max = filas[0], soma = filas.reduce((s, f) => s + f.valor, 0), media = soma / filas.length;
     kTotal.definir(filas.length);
-    kMax.definir(`${max.nome} (${formatarHoras(max.valor)})`);
-    kMedia.definir(formatarHoras(media));
+    kMax.definir(max.nome);
+    kMedia.definir(formatarDuracao(media));
 
     // barras: cinza escuro = acima de 1,25× a média; cinza claro = normal
     const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
     barras.atualizar(
       filas.map(f => f.nome),
-      filas.map(f => f.valor / 60),
+      filas.map(f => f.valor),
       filas.map(f => f.valor > media * 1.25 ? css("--cor-destaque") : css("--cor-barra")),
     );
     barras._cores = true;
     if (manual) toast("Filas atualizadas.");
   }
 
+  const botaoResetarFilas = criarBotao("Resetar filas", async () => {
+    if (!window.confirm("Isso removerá todas as tasks de todas as filas. Deseja continuar?")) return;
+    await resetarFilas();
+    await carregar(false);
+    toast("Todas as filas foram resetadas.");
+  }, { secundario: true });
+  botaoResetarFilas.classList.add("perigo");
+
   const grade = criarGrade([
-    criarBloco({ colunas: 12, conteudo: el("div", { class: "topo-dash" }, [criarBotao("↻ Atualizar filas", () => carregar(true), { secundario: true }), status]) }),
+    criarBloco({ colunas: 12, conteudo: el("div", { class: "topo-dash" }, [
+      criarBotao("↻ Atualizar filas", () => carregar(true), { secundario: true }),
+      botaoResetarFilas,
+      status,
+    ]) }),
     kTotal, kMax, kMedia,
     criarBloco({ titulo: "Carga por Máquina", colunas: 12, conteudo: [barras.elemento, aviso] }),
     criarBloco({ titulo: "Demandas", colunas: 12, conteudo: listaTasks }),
